@@ -63,6 +63,17 @@
   .align2 button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;padding:9px 4px}
   .align2 button.active{background:var(--accent);color:#111;border-color:var(--accentB)}
   .align2 button:hover{border-color:var(--accent)}
+  .aligngrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;direction:ltr}
+  .aligngrid button{display:flex;aspect-ratio:16/10;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--muted);padding:4px;cursor:pointer}
+  .aligngrid button:hover{border-color:var(--accent)}
+  .aligngrid button.active{border-color:var(--accentB);background:#2b2a16;color:var(--accent)}
+  .aligngrid button i{display:block;width:42%;height:32%;background:currentColor;border-radius:1px}
+  .aligngrid button[data-p^="l"]{justify-content:flex-start}
+  .aligngrid button[data-p^="c"]{justify-content:center}
+  .aligngrid button[data-p^="r"]{justify-content:flex-end}
+  .aligngrid button[data-p$="t"]{align-items:flex-start}
+  .aligngrid button[data-p$="c"]{align-items:center}
+  .aligngrid button[data-p$="b"]{align-items:flex-end}
   .grid9{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
   .grid9 button{aspect-ratio:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11px}
   .grid9 button.active{background:var(--accent);color:#111;border-color:var(--accentB)}
@@ -88,9 +99,10 @@
 </style>
 
 <div class="app">
-  <header>
+  <header dir="rtl">
     <div class="brand"><img id="brandLogo" alt="Artlist" style="height:22px;width:auto;display:block"><b>Collab Maker</b></div>
-    <div class="seg" id="formatSeg">
+    <div class="spacer"></div>
+    <div class="seg" id="formatSeg" dir="ltr">
       <button data-f="16:9" class="active" title="1920 × 1080 px"><i class="ar" style="width:23px"></i>16:9</button>
       <button data-f="1:1" title="1200 × 1200 px"><i class="ar" style="width:13px"></i>1:1</button>
       <button data-f="9:16" title="1080 × 1920 px"><i class="ar" style="width:7px"></i>9:16</button>
@@ -105,8 +117,14 @@
   </header>
 
   <div class="body">
-    <!-- LEFT -->
-    <aside class="side left" dir="rtl">
+    <!-- CANVAS (fills the rest, on the left) -->
+    <div class="stagewrap" id="stagewrap">
+      <div class="stage" id="stage"></div>
+      <div class="dropmsg" id="dropmsg">שחרר כאן כדי להוסיף לוגו</div>
+    </div>
+
+    <!-- CONTROLS — single panel on the right (RTL) -->
+    <aside class="side right" dir="rtl">
       <div class="group">
         <h3>לוגואים בשיתוף הפעולה</h3>
         <div id="logoList"></div>
@@ -133,11 +151,10 @@
 
       <div class="group">
         <h3>הצמדה למיקום</h3>
-        <div class="align2" id="alignH">
-          <button data-h="l">שמאל</button><button data-h="c">מרכז</button><button data-h="r">ימין</button>
-        </div>
-        <div class="align2" id="alignV">
-          <button data-v="t">למעלה</button><button data-v="c">אמצע</button><button data-v="b">למטה</button>
+        <div class="aligngrid" id="alignGrid">
+          <button data-p="lt" title="שמאל־עליון"><i></i></button><button data-p="ct" title="מרכז־עליון"><i></i></button><button data-p="rt" title="ימין־עליון"><i></i></button>
+          <button data-p="lc" title="שמאל־אמצע"><i></i></button><button data-p="cc" title="מרכז"><i></i></button><button data-p="rc" title="ימין־אמצע"><i></i></button>
+          <button data-p="lb" title="שמאל־תחתון"><i></i></button><button data-p="cb" title="מרכז־תחתון"><i></i></button><button data-p="rb" title="ימין־תחתון"><i></i></button>
         </div>
         <label class="field">מרחק מהצד (אופקי): <span id="mxVal"></span>
           <input type="range" id="mxRange" min="0" max="15" step="0.05"></label>
@@ -145,23 +162,28 @@
           <input type="range" id="myRange" min="0" max="20" step="0.05"></label>
         <label class="toggle"><input type="checkbox" id="snapToggle" checked> הצמדה חכמה (Snap) · החזק Alt לעקיפה</label>
       </div>
-    </aside>
 
-    <!-- CENTER -->
-    <div class="stagewrap" id="stagewrap">
-      <div class="stage" id="stage"></div>
-      <div class="dropmsg" id="dropmsg">שחרר כאן כדי להוסיף לוגו</div>
-    </div>
+      <hr>
 
-    <!-- RIGHT -->
-    <aside class="side right" dir="rtl">
+      <div class="group">
+        <h3>רקע תצוגה (לא נכלל בייצוא)</h3>
+        <label class="toggle"><input type="checkbox" id="bgToggle" checked> רקע מלא לתצוגה</label>
+        <div class="swatches" id="bgSwatches">
+          <div class="sw" data-c="transparent" style="background:repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 50%/10px 10px"></div>
+          <div class="sw active" data-c="#000000" style="background:#000"></div>
+          <div class="sw" data-c="#ffffff" style="background:#fff"></div>
+          <div class="sw" data-c="#f8da1f" style="background:#f8da1f"></div>
+        </div>
+        <div class="hint">הייצוא תמיד PNG שקוף ברזולוציה מלאה.</div>
+      </div>
+
+      <hr>
+
       <div class="group">
         <h3>שכבות הכהיה (מרוכך)</h3>
         <div id="darkList"></div>
         <button class="btn wide" id="addDark">＋ הוספת הכהיה מרוככת</button>
       </div>
-
-      <hr>
 
       <div class="group" id="darkProps" style="display:none">
         <h3>מאפייני ההכהיה הנבחרת</h3>
@@ -178,20 +200,6 @@
         <label class="field">עוצמה (שקיפות): <span id="opVal"></span>
           <input type="range" id="opRange" min="0" max="100" step="1"></label>
         <button class="btn wide" id="delDark" style="color:var(--danger);border-color:#5a2a2a">🗑 מחיקת ההכהיה</button>
-      </div>
-
-      <hr>
-
-      <div class="group">
-        <h3>רקע תצוגה (לא נכלל בייצוא)</h3>
-        <label class="toggle"><input type="checkbox" id="bgToggle" checked> רקע מלא לתצוגה</label>
-        <div class="swatches" id="bgSwatches">
-          <div class="sw" data-c="transparent" style="background:repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 50%/10px 10px"></div>
-          <div class="sw active" data-c="#000000" style="background:#000"></div>
-          <div class="sw" data-c="#ffffff" style="background:#fff"></div>
-          <div class="sw" data-c="#f8da1f" style="background:#f8da1f"></div>
-        </div>
-        <div class="hint">הייצוא תמיד PNG שקוף ברזולוציה מלאה.</div>
       </div>
     </aside>
   </div>
@@ -439,10 +447,9 @@ $("equalBtn").onclick=()=>{pushUndo();state.logos.forEach(l=>l.hf=1);redraw();to
 // snapshot once when grabbing any slider
 ["heightRange","gapRange","mxRange","myRange","covRange","featRange","opRange"].forEach(id=>$(id).addEventListener("pointerdown",pushUndo));
 
-$("alignH").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;pushUndo();const lay=L();const v=lay.align==="free"?"t":lay.align[1];lay.align=b.dataset.h+v;lay.x=lay.y=null;redraw();markAlignUI();});
-$("alignV").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;pushUndo();const lay=L();const h=lay.align==="free"?"l":lay.align[0];lay.align=h+b.dataset.v;lay.x=lay.y=null;redraw();markAlignUI();});
-function markAlignUI(){const a=L().align;[...$("alignH").children].forEach(x=>x.classList.toggle("active",a!=="free"&&x.dataset.h===a[0]));[...$("alignV").children].forEach(x=>x.classList.toggle("active",a!=="free"&&x.dataset.v===a[1]));}
-function clearAlignUI(){[...$("alignH").children,...$("alignV").children].forEach(x=>x.classList.remove("active"));}
+$("alignGrid").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;pushUndo();const lay=L();lay.align=b.dataset.p;lay.x=lay.y=null;redraw();markAlignUI();});
+function markAlignUI(){const a=L().align;[...$("alignGrid").children].forEach(x=>x.classList.toggle("active",a!=="free"&&x.dataset.p===a));}
+function clearAlignUI(){[...$("alignGrid").children].forEach(x=>x.classList.remove("active"));}
 
 $("guideBtn").onclick=()=>{ pushUndo(); state.layouts[state.format]=guideLayout(state.format); syncControls(); redraw(); toast("מוקם לפי הגייד של Artlist · "+state.format); };
 $("undoBtn").onclick=undo;
