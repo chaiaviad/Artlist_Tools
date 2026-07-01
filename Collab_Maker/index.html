@@ -11,7 +11,7 @@
   .app{display:flex;flex-direction:column;height:100vh}
 
   header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
-  header .brand{font-weight:800;font-size:18px;color:var(--accent);letter-spacing:.5px}
+  header .brand{font-weight:800;font-size:18px;color:var(--accent);letter-spacing:.5px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;flex:0 0 auto}
   header .brand b{color:var(--txt);font-weight:600;font-size:14px;margin-inline-start:6px}
   header .spacer{flex:1}
   .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -84,6 +84,12 @@
   .logoItem .mini{background:transparent;border:0;color:var(--muted);font-size:13px;padding:2px 3px;line-height:1}
   .logoItem .mini:hover{color:var(--txt)}
   .logoItem select{width:100%;flex-basis:100%}
+  .logoRow{flex-direction:column;align-items:stretch}
+  .logoRowTop{display:flex;align-items:center;gap:8px;width:100%}
+  .logoEdit{display:flex;flex-direction:column;gap:7px;width:100%;margin-top:8px;padding-top:9px;border-top:1px solid var(--line)}
+  .logoEdit .field{font-size:11px}
+  .logoEdit .v{color:var(--txt);font-weight:700}
+  .tagbadge{font-size:10px;font-weight:800;color:#111;background:var(--accent);border-radius:5px;padding:2px 6px;flex:0 0 auto}
   .toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt)}
   .hint{font-size:11px;color:var(--muted);line-height:1.55}
   .swatches{display:flex;gap:6px}
@@ -107,7 +113,6 @@
       <button data-f="9:16" title="1080 × 1920 px"><i class="ar" style="width:7px"></i>9:16</button>
     </div>
     <button class="btn" id="applyAllBtn" title="העתקת הפריסה הנוכחית לשני הפורמטים האחרים">⧉ החל על כל הפורמטים</button>
-    <button class="btn" id="undoBtn" title="בטל (Ctrl+Z)">↶ בטל</button>
     <div class="spacer"></div>
     <button class="btn" id="resetBtn">איפוס</button>
     <button class="btn" id="exportAllBtn">⬇ ייצוא 3 הפורמטים</button>
@@ -139,10 +144,13 @@
       <div class="group" id="darkProps" style="display:none">
         <h3>מאפייני ההכהיה הנבחרת</h3>
         <div style="font-size:12px;color:var(--muted)">עיגון לפינה / קצה:</div>
-        <div class="grid9" id="darkAnchor">
-          <button data-a="lt">↖</button><button data-a="ct">↑</button><button data-a="rt">↗</button>
-          <button data-a="lc">←</button><button data-a="cc">●</button><button data-a="rc">→</button>
-          <button data-a="lb">↙</button><button data-a="cb">↓</button><button data-a="rb">↘</button>
+        <div class="alignrow" id="darkAnchor">
+          <button data-h="l" title="שמאל"><svg viewBox="0 0 24 24"><line x1="3" y1="2" x2="3" y2="22"/><rect x="5" y="7" width="12" height="10"/></svg></button>
+          <button data-h="c" title="מרכז אופקי"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><rect x="6" y="7" width="12" height="10"/></svg></button>
+          <button data-h="r" title="ימין"><svg viewBox="0 0 24 24"><line x1="21" y1="2" x2="21" y2="22"/><rect x="7" y="7" width="12" height="10"/></svg></button>
+          <button data-v="t" title="למעלה"><svg viewBox="0 0 24 24"><line x1="2" y1="3" x2="22" y2="3"/><rect x="7" y="5" width="10" height="12"/></svg></button>
+          <button data-v="c" title="אמצע"><svg viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><rect x="7" y="6" width="10" height="12"/></svg></button>
+          <button data-v="b" title="למטה"><svg viewBox="0 0 24 24"><line x1="2" y1="21" x2="22" y2="21"/><rect x="7" y="7" width="10" height="12"/></svg></button>
         </div>
         <label class="field">כיסוי (גודל האזור): <span id="covVal"></span>
           <input type="range" id="covRange" min="5" max="120" step="1"></label>
@@ -173,14 +181,6 @@
         <div class="hint">אפשר גם לגרור קבצים לכאן (Drag&amp;Drop), להדביק תמונה/SVG עם Ctrl+V, או להדביק כתובת תמונה.</div>
       </div>
 
-      <div class="group" id="logoProps" style="display:none">
-        <h3>עריכת הלוגו הנבחר</h3>
-        <label class="field">גודל הלוגו: <span id="lsizeVal"></span>
-          <input type="range" id="lsizeRange" min="20" max="400" step="1"></label>
-        <div class="hint">גרור את הלוגו על הבמה כדי למקם אותו בנפרד (Alt לביטול הצמדה). שנה גודל גם בגרירת הפינות.</div>
-        <button class="btn wide" id="lposReset">↺ איפוס מיקום הלוגו</button>
-      </div>
-
       <hr>
 
       <div class="group">
@@ -190,6 +190,11 @@
         <label class="field"><span class="lbl">מרחק בין הלוגואים: <span id="gapVal"></span><button class="miniReset" id="gapReset" type="button" title="איפוס לדיפולט הגייד">↺</button></span>
           <input type="range" id="gapRange" min="0" max="150" step="1"></label>
         <label class="toggle"><input type="checkbox" id="divToggle"> קו מפריד בין הלוגואים</label>
+        <div id="divOpts" class="group" style="display:none;gap:8px">
+          <label class="field"><span class="lbl">גובה הסימן: <span id="dhVal"></span></span><input type="range" id="dhRange" min="10" max="150" step="1"></label>
+          <label class="field"><span class="lbl">עובי הסימן: <span id="dwVal"></span></span><input type="range" id="dwRange" min="0.5" max="12" step="0.5"></label>
+          <div class="align2" id="divTypeRow"><button data-t="line">קו |</button><button data-t="x">איקס ✕</button></div>
+        </div>
         <button class="btn wide" id="equalBtn">↔ איפוס גדלים לזהים</button>
       </div>
 
@@ -292,7 +297,8 @@ function groupPos(){ const lay=L(),box=groupBox(),f=F();
   if(lay.align==="free" && lay.x!=null) return {x:lay.x,y:lay.y};
   const mx=f.w*(lay.mxPct/100), my=f.h*(lay.myPct/100);
   const X={l:mx,c:(f.w-box.w)/2,r:f.w-box.w-mx}, Y={t:my,c:(f.h-box.h)/2,b:f.h-box.h-my};
-  return {x:Math.round(X[lay.align[0]]), y:Math.round(Y[lay.align[1]])}; }
+  const ax=X[lay.align&&lay.align[0]], ay=Y[lay.align&&lay.align[1]];
+  return {x:Math.round(ax==null?mx:ax), y:Math.round(ay==null?my:ay)}; }
 
 /* ---------- darken scrim ---------- */
 function addDark(){ pushUndo(); state.darks.push({id:state.uid++,anchor:"rb",cov:55,feather:60,opacity:0.55});
@@ -345,21 +351,29 @@ function redraw(){
   stage.querySelectorAll(".el,.divline,.scrim,.snapline,.guideline").forEach(n=>n.remove());
   state.darks.forEach(d=>{ const n=document.createElement("div"); n.className="scrim"; n.style.background=scrimCSS(d); stage.appendChild(n); });
   let cx=pos.x; const gap=baseH()*(L().gapPct/100);
-  state.logos.forEach((l,i)=>{ const w=logoW(l),h=logoH(l),lx=cx+(l.dxPct||0)*f.w,y=pos.y+(box.h-h)/2+(l.dyPct||0)*f.h;
+  state.logos.forEach((l,i)=>{ const w=logoW(l),h=logoH(l); let lx=cx+(l.dxPct||0)*f.w,y=pos.y+(box.h-h)/2+(l.dyPct||0)*f.h;
+    lx=Math.max(0,Math.min(Math.max(0,f.w-w),lx)); y=Math.max(0,Math.min(Math.max(0,f.h-h),y));
     const n=document.createElement("div"); n.className="el"+(sel("logo",l.id)?" sel":"");
     n.style.cssText=`left:${lx*s}px;top:${y*s}px;width:${w*s}px;height:${h*s}px`;
     n.dataset.kind="logo"; n.dataset.id=l.id;
     const im=document.createElement("img"); im.src=l.src; n.appendChild(im);
     if(sel("logo",l.id)) ["tl","tr","bl","br"].forEach(p=>{const hd=document.createElement("div");hd.className="handle "+p;hd.dataset.h=p;n.appendChild(hd);});
     stage.appendChild(n);
-    if(lay.divider && i<state.logos.length-1){ const lh=box.h*.62,lw=Math.max(2,box.h*.02),ldx=cx+w+gap/2-lw/2,ly=pos.y+(box.h-lh)/2;
-      const dl=document.createElement("div"); dl.className="divline";
-      dl.style.cssText=`left:${ldx*s}px;top:${ly*s}px;width:${lw*s}px;height:${lh*s}px`; stage.appendChild(dl); }
+    if(lay.divider && i<state.logos.length-1) drawDivider(cx+w+gap/2, pos.y+box.h/2, box.h, s);
     cx+=w+gap;
   });
-  if(state.sel.type==="logo"){ const sl=state.logos.find(x=>x.id===state.sel.id), r=$("lsizeRange"); if(sl&&r){ r.value=Math.round(sl.hf*100); $("lsizeVal").textContent=Math.round(sl.hf*100)+"%"; } }
+  if(state.sel.type==="logo"){ const sl=state.logos.find(x=>x.id===state.sel.id), ed=$("logoList")&&$("logoList").querySelector(".logoRow.sel .logoEdit");
+    if(sl&&ed){ const f2=F(),slot=logoSlot(sl),eS=ed.querySelector(".eSize"),eX=ed.querySelector(".eX"),eY=ed.querySelector(".eY");
+      if(eS){eS.value=Math.round(sl.hf*100);eS.previousElementSibling.querySelector(".v").textContent=Math.round(sl.hf*100)+"%";}
+      const cX=Math.round(slot.x+(sl.dxPct||0)*f2.w),cY=Math.round(slot.y+(sl.dyPct||0)*f2.h);
+      if(eX){eX.value=cX;eX.previousElementSibling.querySelector(".v").textContent=cX;}
+      if(eY){eY.value=cY;eY.previousElementSibling.querySelector(".v").textContent=cY;} } }
   saveState();
 }
+function drawDivider(cxMid,cyMid,boxH,s){ const lay=L(),dh=boxH*(lay.dividerH||.62),dwv=Math.max(1,boxH*(lay.dividerW||.02));
+  const mk=ang=>{ const dl=document.createElement("div"); dl.className="divline";
+    dl.style.cssText=`left:${(cxMid-dwv/2)*s}px;top:${(cyMid-dh/2)*s}px;width:${dwv*s}px;height:${dh*s}px`+(ang?`;transform:rotate(${ang}deg);transform-origin:center center`:""); stage.appendChild(dl); };
+  if((lay.dividerType||"line")==="x"){ mk(-45); mk(45); } else mk(0); }
 // auto (lockup) slot of a logo, ignoring its per-logo offset
 function logoSlot(l){ const pos=groupPos(),box=groupBox(),gap=baseH()*(L().gapPct/100); let cx=pos.x;
   for(const it of state.logos){ const w=logoW(it),h=logoH(it); if(it===l) return {x:cx,y:pos.y+(box.h-h)/2,w,h}; cx+=w+gap; }
@@ -403,50 +417,61 @@ window.addEventListener("pointermove",e=>{ if(!drag)return;
     }
     ax=Math.max(0,Math.min(f.w-bw,ax)); ay=Math.max(0,Math.min(f.h-bh,ay));
     l.dxPct=(ax-slot.x)/f.w; l.dyPct=(ay-slot.y)/f.h;
-  } else { const newH=Math.max(10,drag.oh+(drag.up?-dy:dy)); drag.l.hf=newH/baseH(); }
+  } else { const newH=Math.max(10,drag.oh+(drag.up?-dy:dy)); drag.l.hf=clampHf(drag.l,newH/baseH()); }
   redraw();
   if(drag.mode==="move"){ drawGuides(); drawSnaplines(lineX,lineY); }
 });
 window.addEventListener("pointerup",()=>{ drag=null; stage.querySelectorAll(".snapline,.guideline").forEach(n=>n.remove()); });
 window.addEventListener("keydown",e=>{
   const ae=document.activeElement, typing=ae&&(ae.tagName==="TEXTAREA"||(ae.tagName==="INPUT"&&/^(number|text)$/.test(ae.type)));
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){ if(typing)return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){ if(typing)return; e.preventDefault(); redo(); return; }
+  if((e.ctrlKey||e.metaKey)&&(e.code==="KeyZ"||e.key.toLowerCase()==="z")){ if(typing)return; e.preventDefault(); e.shiftKey?redo():undo(); return; }
+  if((e.ctrlKey||e.metaKey)&&(e.code==="KeyY"||e.key.toLowerCase()==="y")){ if(typing)return; e.preventDefault(); redo(); return; }
   if(e.key==="Delete"&&!typing&&state.sel.type==="logo"){ pushUndo(); removeLogo(state.sel.id); }
 });
 
 /* ---------- left panels ---------- */
 function buildLogoList(){ const box=$("logoList"); box.innerHTML="";
   const ab=$("addArtlist"); if(ab)ab.style.display=state.logos.some(l=>l.tag==="artlist")?"none":"block";
-  buildLogoProps();
   if(!state.logos.length){ box.innerHTML='<div class="empty">אין לוגואים</div>'; return; }
-  state.logos.forEach((l,i)=>{ const row=document.createElement("div"); row.className="logoItem"+(sel("logo",l.id)?" sel":"");
-    row.innerHTML=`<div class="thumb"><img src="${l.src}"></div><span class="nm">${l.name}</span>
-      <button class="mini" data-a="left" title="שמאלה">◀</button>
-      <button class="mini" data-a="right" title="ימינה">▶</button>
-      <button class="mini" data-a="del" title="הסר">✕</button>
-      <select data-a="tag"><option value="artlist"${l.tag==="artlist"?" selected":""}>לוגו Artlist</option><option value="partner"${l.tag==="partner"?" selected":""}>לוגו שותף</option></select>`;
-    row.querySelector(".nm").onclick=()=>{state.sel={type:"logo",id:l.id};redraw();buildLogoList();};
-    row.querySelector(".thumb").onclick=()=>{state.sel={type:"logo",id:l.id};redraw();buildLogoList();};
-    row.querySelector('[data-a=left]').onclick=()=>{pushUndo();swap(i,i-1);};
-    row.querySelector('[data-a=right]').onclick=()=>{pushUndo();swap(i,i+1);};
-    row.querySelector('[data-a=del]').onclick=()=>{pushUndo();removeLogo(l.id);};
-    row.querySelector('[data-a=tag]').onchange=ev=>{pushUndo();l.tag=ev.target.value; reorderLogos(); redraw(); buildLogoList(); toast(l.tag==="partner"?"תויג כלוגו שותף":"תויג כ-Artlist");};
+  const f=F();
+  state.logos.forEach((l,i)=>{ const row=document.createElement("div"); row.className="logoItem logoRow"+(sel("logo",l.id)?" sel":"");
+    const top=document.createElement("div"); top.className="logoRowTop";
+    top.innerHTML=`<div class="thumb"><img src="${l.src}"></div><span class="nm">${l.name}</span>`+(l.tag==="artlist"?`<span class="tagbadge">Artlist</span>`:``)+`<button class="mini" data-a="del" title="הסר">✕</button>`;
+    top.querySelector(".thumb").onclick=()=>{state.sel={type:"logo",id:l.id};redraw();buildLogoList();};
+    top.querySelector(".nm").onclick=()=>{state.sel={type:"logo",id:l.id};redraw();buildLogoList();};
+    top.querySelector('[data-a=del]').onclick=()=>{pushUndo();removeLogo(l.id);};
+    row.appendChild(top);
+    if(sel("logo",l.id)){
+      const slot=logoSlot(l), w=logoW(l), h=logoH(l);
+      const curX=Math.round(slot.x+(l.dxPct||0)*f.w), curY=Math.round(slot.y+(l.dyPct||0)*f.h);
+      const maxX=Math.max(0,Math.round(f.w-w)), maxY=Math.max(0,Math.round(f.h-h));
+      const ed=document.createElement("div"); ed.className="logoEdit";
+      ed.innerHTML=`
+        <label class="field"><span class="lbl">גודל <b class="v">${Math.round(l.hf*100)}%</b></span><input type="range" class="eSize" min="20" max="400" value="${Math.round(l.hf*100)}"></label>
+        <label class="field"><span class="lbl">מיקום X <b class="v">${curX}</b></span><input type="range" class="eX" min="0" max="${maxX}" value="${Math.min(curX,maxX)}"></label>
+        <label class="field"><span class="lbl">מיקום Y <b class="v">${curY}</b></span><input type="range" class="eY" min="0" max="${maxY}" value="${Math.min(curY,maxY)}"></label>
+        <button class="btn wide eReset">↺ איפוס מיקום הלוגו</button>`;
+      const eS=ed.querySelector(".eSize"), eX=ed.querySelector(".eX"), eY=ed.querySelector(".eY");
+      eS.addEventListener("pointerdown",pushUndo);
+      eS.oninput=()=>{ l.hf=clampHf(l,+eS.value/100); eS.previousElementSibling.querySelector(".v").textContent=Math.round(l.hf*100)+"%"; redraw(); };
+      eX.addEventListener("pointerdown",pushUndo);
+      eX.oninput=()=>{ const s2=logoSlot(l); l.dxPct=(+eX.value - s2.x)/f.w; eX.previousElementSibling.querySelector(".v").textContent=eX.value; redraw(); };
+      eY.addEventListener("pointerdown",pushUndo);
+      eY.oninput=()=>{ const s2=logoSlot(l); l.dyPct=(+eY.value - s2.y)/f.h; eY.previousElementSibling.querySelector(".v").textContent=eY.value; redraw(); };
+      ed.querySelector(".eReset").onclick=()=>{ pushUndo(); l.dxPct=0; l.dyPct=0; redraw(); buildLogoList(); };
+      row.appendChild(ed);
+    }
     row.draggable=true; row.style.cursor="grab";
-    row.addEventListener("dragstart",ev=>{dragIdx=i;ev.dataTransfer.effectAllowed="move";});
+    row.addEventListener("dragstart",ev=>{ if(ev.target.closest(".logoEdit")){ev.preventDefault();return;} dragIdx=i;ev.dataTransfer.effectAllowed="move";});
     row.addEventListener("dragover",ev=>ev.preventDefault());
     row.addEventListener("drop",ev=>{ev.preventDefault();if(dragIdx==null||dragIdx===i)return;pushUndo();const ls=state.logos;const [m]=ls.splice(dragIdx,1);ls.splice(i,0,m);dragIdx=null;redraw();buildLogoList();});
     box.appendChild(row); });
 }
 function swap(i,j){ const ls=state.logos; if(j<0||j>=ls.length)return; [ls[i],ls[j]]=[ls[j],ls[i]]; redraw(); buildLogoList(); }
 function removeLogo(id){ state.logos=state.logos.filter(l=>l.id!==id); if(sel("logo",id))state.sel={type:null,id:null}; redraw(); buildLogoList(); }
-/* ---------- per-logo edit panel ---------- */
-function selLogo(){ return state.sel.type==="logo"?state.logos.find(x=>x.id===state.sel.id):null; }
-function buildLogoProps(){ const l=selLogo(), box=$("logoProps"); if(!box)return;
-  box.style.display=l?"flex":"none"; if(!l)return; $("lsizeRange").value=Math.round(l.hf*100); $("lsizeVal").textContent=Math.round(l.hf*100)+"%"; }
-$("lsizeRange").oninput=()=>{ const l=selLogo(); if(!l)return; l.hf=+$("lsizeRange").value/100; $("lsizeVal").textContent=$("lsizeRange").value+"%"; redraw(); };
-$("lsizeRange").addEventListener("pointerdown",pushUndo);
-$("lposReset").onclick=()=>{ const l=selLogo(); if(!l)return; pushUndo(); l.dxPct=0; l.dyPct=0; redraw(); toast("מיקום הלוגו אופס"); };
+/* ---------- per-logo helpers ---------- */
+// cap a logo's height-factor so the logo never exceeds the canvas in either dimension
+function clampHf(l,hf){ const f=F(),bh=baseH(),maxH=Math.min(f.h,f.w*l.natH/l.natW); if(bh*hf>maxH)hf=maxH/bh; return Math.max(0.05,hf); }
 
 /* ---------- right: dark list + props ---------- */
 function buildDarkList(){ const box=$("darkList"); box.innerHTML="";
@@ -459,12 +484,13 @@ function buildDarkList(){ const box=$("darkList"); box.innerHTML="";
 }
 function buildDarkProps(){ const d=state.sel.type==="dark"?darkById(state.sel.id):null;
   $("darkProps").style.display=d?"flex":"none"; if(!d)return;
-  [...$("darkAnchor").children].forEach(b=>b.classList.toggle("active",b.dataset.a===d.anchor));
+  $("darkAnchor").querySelectorAll("[data-h]").forEach(x=>x.classList.toggle("active",x.dataset.h===d.anchor[0]));
+  $("darkAnchor").querySelectorAll("[data-v]").forEach(x=>x.classList.toggle("active",x.dataset.v===d.anchor[1]));
   $("covRange").value=d.cov; $("covVal").textContent=d.cov+"%";
   $("featRange").value=d.feather; $("featVal").textContent=d.feather+"%";
   $("opRange").value=Math.round(d.opacity*100); $("opVal").textContent=Math.round(d.opacity*100)+"%";
 }
-$("darkAnchor").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=darkById(state.sel.id);if(!d)return;pushUndo();d.anchor=b.dataset.a;redraw();buildDarkList();buildDarkProps();});
+$("darkAnchor").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const d=darkById(state.sel.id);if(!d)return;pushUndo();if(b.dataset.h)d.anchor=b.dataset.h+d.anchor[1];else d.anchor=d.anchor[0]+b.dataset.v;redraw();buildDarkList();buildDarkProps();});
 $("covRange").oninput=()=>{const d=darkById(state.sel.id);if(!d)return;d.cov=+$("covRange").value;$("covVal").textContent=d.cov+"%";redraw();};
 $("featRange").oninput=()=>{const d=darkById(state.sel.id);if(!d)return;d.feather=+$("featRange").value;$("featVal").textContent=d.feather+"%";redraw();};
 $("opRange").oninput=()=>{const d=darkById(state.sel.id);if(!d)return;d.opacity=$("opRange").value/100;$("opVal").textContent=$("opRange").value+"%";redraw();};
@@ -484,7 +510,12 @@ $("heightRange").oninput=()=>{L().hPct=+$("heightRange").value;$("hVal").textCon
 $("gapRange").oninput=()=>{L().gapPct=+$("gapRange").value;$("gapVal").textContent=L().gapPct+"% ("+Math.round(baseH()*L().gapPct/100)+"px)";redraw();};
 $("mxRange").oninput=()=>{L().mxPct=+$("mxRange").value;$("mxVal").textContent=L().mxPct+"%";redraw();};
 $("myRange").oninput=()=>{L().myPct=+$("myRange").value;$("myVal").textContent=L().myPct+"%";redraw();};
-$("divToggle").onchange=()=>{pushUndo();L().divider=$("divToggle").checked;redraw();};
+$("divToggle").onchange=()=>{pushUndo();L().divider=$("divToggle").checked;$("divOpts").style.display=L().divider?"flex":"none";redraw();};
+$("dhRange").addEventListener("pointerdown",pushUndo);
+$("dhRange").oninput=()=>{L().dividerH=+$("dhRange").value/100;$("dhVal").textContent=$("dhRange").value+"%";redraw();};
+$("dwRange").addEventListener("pointerdown",pushUndo);
+$("dwRange").oninput=()=>{L().dividerW=+$("dwRange").value/100;$("dwVal").textContent=$("dwRange").value+"%";redraw();};
+$("divTypeRow").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;pushUndo();L().dividerType=b.dataset.t;[...$("divTypeRow").children].forEach(x=>x.classList.toggle("active",x.dataset.t===b.dataset.t));redraw();});
 $("equalBtn").onclick=()=>{pushUndo();state.logos.forEach(l=>l.hf=1);redraw();toast("הגדלים אופסו לזהים");};
 // snapshot once when grabbing any slider
 ["heightRange","gapRange","mxRange","myRange","covRange","featRange","opRange"].forEach(id=>$(id).addEventListener("pointerdown",pushUndo));
@@ -500,10 +531,10 @@ $("hReset").onclick=e=>{e.preventDefault();e.stopPropagation();pushUndo();L().hP
 $("gapReset").onclick=e=>{e.preventDefault();e.stopPropagation();pushUndo();L().gapPct=guideLayout(state.format).gapPct;syncControls();redraw();toast("המרווח אופס לדיפולט");};
 $("mxReset").onclick=e=>{e.preventDefault();e.stopPropagation();pushUndo();const g=guideLayout(state.format);L().mxPct=g.mxPct;if(L().align==="free"){L().align=g.align;L().x=L().y=null;}syncControls();redraw();toast("מרחק מהצד — דיפולט Artlist");};
 $("myReset").onclick=e=>{e.preventDefault();e.stopPropagation();pushUndo();const g=guideLayout(state.format);L().myPct=g.myPct;if(L().align==="free"){L().align=g.align;L().x=L().y=null;}syncControls();redraw();toast("מרחק מלמעלה — דיפולט Artlist");};
-$("undoBtn").onclick=undo;
-$("applyAllBtn").onclick=()=>{ pushUndo(); const c=L(); for(const k in state.layouts){ if(k===state.format)continue;
-  state.layouts[k]={align:c.align,hPct:c.hPct,gapPct:c.gapPct,mxPct:c.mxPct,myPct:c.myPct,divider:c.divider,x:null,y:null}; }
-  toast("הפריסה הוחלה על כל הפורמטים"); };
+$("applyAllBtn").onclick=()=>{ pushUndo(); const c=L(); const al=c.align==="free"?guideLayout(state.format).align:c.align;
+  for(const k in state.layouts){ if(k===state.format)continue; const g=guideLayout(k);
+    state.layouts[k]={align:al,hPct:c.hPct,gapPct:c.gapPct,mxPct:g.mxPct,myPct:g.myPct,divider:c.divider,dividerH:c.dividerH,dividerW:c.dividerW,dividerType:c.dividerType,x:null,y:null}; }
+  toast("הפריסה הוחלה על כל הפורמטים (מרווחי הגייד לכל פורמט)"); };
 
 $("resetBtn").onclick=()=>{ if(!confirm("לאפס הכל? (לוגו Artlist יישאר)"))return; pushUndo();
   const keep=localStorage.getItem("artlistLogo")||ARTLIST_LOGO;
@@ -553,7 +584,9 @@ async function renderFormat(fmt){ const f=FORMATS[fmt], lay=state.layouts[fmt];
   let cx=px;
   for(let i=0;i<state.logos.length;i++){ const l=state.logos[i],h=base*l.hf,w=h*(l.natW/l.natH),y=py+(bh-h)/2+(l.dyPct||0)*f.h,lx=cx+(l.dxPct||0)*f.w;
     await drawImg(ctx,l.src,lx,y,w,h);
-    if(lay.divider&&i<state.logos.length-1){const lh=bh*.62,lw=Math.max(2,bh*.02),lx=cx+w+gap/2-lw/2,ly=py+(bh-lh)/2;ctx.fillStyle="#fff";ctx.fillRect(lx,ly,lw,lh);}
+    if(lay.divider&&i<state.logos.length-1){ const dh=bh*(lay.dividerH||.62),dwv=Math.max(1,bh*(lay.dividerW||.02)),mX=cx+w+gap/2,mY=py+bh/2; ctx.fillStyle="#fff";
+      if((lay.dividerType||"line")==="x"){ ctx.save();ctx.translate(mX,mY);[-Math.PI/4,Math.PI/4].forEach(a=>{ctx.save();ctx.rotate(a);ctx.fillRect(-dwv/2,-dh/2,dwv,dh);ctx.restore();});ctx.restore(); }
+      else ctx.fillRect(mX-dwv/2,mY-dh/2,dwv,dh); }
     cx+=w+gap; }
   return cv;
 }
@@ -572,7 +605,11 @@ function syncControls(){ const lay=L();
   if(lay.mxPct<gmin.mxPct)lay.mxPct=gmin.mxPct; if(lay.myPct<gmin.myPct)lay.myPct=gmin.myPct;
   $("mxRange").value=lay.mxPct;$("mxVal").textContent=lay.mxPct+"%";
   $("myRange").value=lay.myPct;$("myVal").textContent=lay.myPct+"%";
-  $("divToggle").checked=lay.divider; markAlignUI();
+  $("divToggle").checked=lay.divider; $("divOpts").style.display=lay.divider?"flex":"none";
+  $("dhRange").value=Math.round((lay.dividerH||.62)*100); $("dhVal").textContent=Math.round((lay.dividerH||.62)*100)+"%";
+  $("dwRange").value=(lay.dividerW||.02)*100; $("dwVal").textContent=((lay.dividerW||.02)*100)+"%";
+  [...$("divTypeRow").children].forEach(x=>x.classList.toggle("active",x.dataset.t===(lay.dividerType||"line")));
+  markAlignUI();
 }
 if(loadState()){ [...$("formatSeg").children].forEach(b=>b.classList.toggle("active",b.dataset.f===state.format));
   syncControls(); fitStage(); buildLogoList(); buildDarkList(); buildDarkProps();
