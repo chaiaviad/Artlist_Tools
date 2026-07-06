@@ -60,6 +60,22 @@ option {
   color: #111;
   background: #fff;
 }
+.timelineEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 8.6px;
+  font-weight: 800;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+#reverseBtn.on,
+#loopBtn.on {
+  color: #0b0c0f;
+  background: var(--accent);
+  border-color: var(--accent);
+}
 
 button {
   appearance: none;
@@ -1167,6 +1183,15 @@ input[type=range]::-moz-range-thumb {
             <button class="mainBtn playBtn" id="motionPlayBtn" type="button"><span class="btnIcon">▶</span>Play</button>
           </div>
           <div class="flatField">
+            <div class="lr"><span class="lb">Timeline</span><span class="vl" id="timelineVal">0%</span></div>
+            <input type="range" id="timelineRange" min="0" max="1000" value="0" title="Animation position. Drag to scrub; the playhead moves while playing.">
+            <div class="timelineEnds"><span>Start</span><span>End</span></div>
+          </div>
+          <div class="flatGrid two">
+            <button class="toggleBtn" id="reverseBtn" type="button" title="Reverse the animation direction (e.g. so it ends on the image instead of starting on it).">⇄ Reverse</button>
+            <button class="toggleBtn on" id="loopBtn" type="button" title="Loop continuously, or play once and stop at the end for a clear start → end.">Loop On</button>
+          </div>
+          <div class="flatField">
             <div class="lr"><span class="lb">Speed</span><span class="vl" id="speedVal">0.35 cps</span></div>
             <input type="range" id="speedRange" min="0" max="200" value="35" data-default="35">
           </div>
@@ -1563,8 +1588,16 @@ function renderLoop(now){
   state.lastFrameTime=now;
   if(state.motionPlaying || state.recording){
     const speed=Number(els.speedRange.value)/100;
-    state.motionPhase=wrap01(state.motionPhase + dt*speed*state.direction);
+    const np=state.motionPhase + dt*speed*state.direction;
+    if(state.loop===false && !state.recording){
+      if(np>=1){ state.motionPhase=1; toggleMotion(false); }
+      else if(np<=0){ state.motionPhase=0; toggleMotion(false); }
+      else state.motionPhase=np;
+    } else {
+      state.motionPhase=wrap01(np);
+    }
     state.needsRender=true;
+    syncTimeline();
   }
   if((state.sourceType==='video' || state.sourceType==='camera') && !state.video.paused){
     if(state.sourceType==='video') updateMediaTimeUI();
@@ -1603,6 +1636,8 @@ function renderLoop(now){
 }
 function setView(view){state.currentView=view; els.viewChips.querySelectorAll('.chip').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view)); markRender();}
 function toggleMotion(force=null){state.motionPlaying=(force===null)?!state.motionPlaying:!!force; els.motionPlayBtn.innerHTML=state.motionPlaying?'<span class="btnIcon">⏸</span>Pause':'<span class="btnIcon">▶</span>Play'; els.motionPlayBtn.classList.toggle('on',state.motionPlaying); updateBadges(); markRender();}
+function syncTimeline(){if(!els.timelineRange || state.scrubbing) return; const p=(state.loop===false)?clamp(state.motionPhase,0,1):wrap01(state.motionPhase); els.timelineRange.value=Math.round(p*1000); if(els.timelineVal) els.timelineVal.textContent=`${Math.round(p*100)}%`;}
+function updateDirectionUI(){if(els.directionChips) els.directionChips.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',Number(b.dataset.dir)===state.direction)); if(els.reverseBtn) els.reverseBtn.classList.toggle('on',state.direction===-1);}
 async function toggleVideoPlayback(){if(state.sourceType!=='video') return; if(state.video.paused){try{await state.video.play(); els.mediaPlayBtn.innerHTML='<span class="btnIcon">⏸</span>Pause';}catch(err){setStatus(`Playback error: ${err.message || err}`,true);}}else{state.video.pause(); els.mediaPlayBtn.innerHTML='<span class="btnIcon">▶</span>Source';} markRender();}
 
 function currentExportScale(){return Math.max(1,Number(els.exportScale?.value)||1);}
@@ -1796,10 +1831,21 @@ function bindEvents(){
   if(els.fileInput) els.fileInput.addEventListener('change',e=>handleFiles(e.target.files));
   els.cameraBtn.addEventListener('click',startCamera); els.stopCameraBtn.addEventListener('click',stopCamera);
   if(els.qualitySelect) els.qualitySelect.addEventListener('change',()=>{PROCESS_MAX_SIDE=Number(els.qualitySelect.value)||2160; updateDisplays(); resizeCurrentSourceForQuality();});
-  if(els.autoDepthSelect) els.autoDepthSelect.addEventListener('change',()=>{state.autoDepthMs=Number(els.autoDepthSelect.value)||0; state.autoDepthLast=0; updateDisplays(); if(state.autoDepthMs>0) showToast('Auto depth refresh on');}); els.estimateBtn.addEventListener('click',estimateDepth); els.reestimateBtn.addEventListener('click',estimateDepth); els.mediaPlayBtn.addEventListener('click',toggleVideoPlayback); els.motionPlayBtn.addEventListener('click',()=>toggleMotion()); els.pngBtn.addEventListener('click',downloadPNG); els.recordBtn.addEventListener('click',startRecording); els.fitBtn.addEventListener('click',resetPreviewFit);
+  if(els.autoDepthSelect) els.autoDepthSelect.addEventListener('change',()=>{state.autoDepthMs=Number(els.autoDepthSelect.value)||0; state.autoDepthLast=0; updateDisplays(); if(state.autoDepthMs>0) showToast('Auto depth refresh on');}); els.estimateBtn.addEventListener('click',estimateDepth); els.reestimateBtn.addEventListener('click',estimateDepth); els.mediaPlayBtn.addEventListener('click',toggleVideoPlayback); els.motionPlayBtn.addEventListener('click',()=>{ if(!state.motionPlaying && state.loop===false){ if(state.direction>0 && state.motionPhase>=1){ state.motionPhase=0; syncTimeline(); } else if(state.direction<0 && state.motionPhase<=0){ state.motionPhase=1; syncTimeline(); } } toggleMotion(); }); els.pngBtn.addEventListener('click',downloadPNG); els.recordBtn.addEventListener('click',startRecording); els.fitBtn.addEventListener('click',resetPreviewFit);
   els.viewChips.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
   [els.blendRange,els.contrastRange,els.speedRange,els.scaleRange,els.phaseRange,els.softnessRange,els.durationRange,els.exportScale,els.lumaRange,els.gammaRange,els.blendMode].forEach(el=>el.addEventListener('input',()=>{updateDisplays(); if(el===els.contrastRange || el===els.gammaRange) drawDepthPreview(); markRender();})); els.fpsSelect.addEventListener('change',updateDisplays); els.formatSelect.addEventListener('change',updateDisplays);
-  els.directionChips.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{state.direction=Number(btn.dataset.dir); els.directionChips.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b===btn));}));
+  els.directionChips.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{state.direction=Number(btn.dataset.dir); updateDirectionUI();}));
+  els.timelineRange=$('timelineRange'); els.timelineVal=$('timelineVal'); els.reverseBtn=$('reverseBtn'); els.loopBtn=$('loopBtn');
+  if(state.loop===undefined) state.loop=true;
+  if(els.timelineRange){
+    const scrub=()=>{ state.scrubbing=true; if(state.motionPlaying) toggleMotion(false); state.motionPhase=clamp(Number(els.timelineRange.value)/1000,0,1); if(els.timelineVal) els.timelineVal.textContent=`${Math.round(state.motionPhase*100)}%`; markRender(); };
+    els.timelineRange.addEventListener('input',scrub);
+    els.timelineRange.addEventListener('pointerup',()=>{state.scrubbing=false;});
+    els.timelineRange.addEventListener('change',()=>{state.scrubbing=false;});
+  }
+  if(els.reverseBtn) els.reverseBtn.addEventListener('click',()=>{ state.direction=-state.direction; updateDirectionUI(); showToast(state.direction===-1?'Reversed — ends on image':'Forward'); });
+  if(els.loopBtn) els.loopBtn.addEventListener('click',()=>{ state.loop=!state.loop; els.loopBtn.classList.toggle('on',state.loop); els.loopBtn.textContent=state.loop?'Loop On':'Loop Off'; showToast(state.loop?'Looping':'Play once (stops at end)'); });
+  updateDirectionUI();
   els.motionModeChips.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{state.motionMode=btn.dataset.mode; els.motionModeChips.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b===btn)); markRender();}));
   els.includeAudioBtn.addEventListener('click',()=>{state.includeAudio=!state.includeAudio; els.includeAudioBtn.classList.toggle('on',state.includeAudio);});
   els.invertBtn.addEventListener('click',()=>{state.invertDepth=!state.invertDepth; els.invertBtn.classList.toggle('on',state.invertDepth); drawDepthPreview(); markRender();});
