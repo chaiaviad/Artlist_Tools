@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Digital Imprint Shader</title>
+<style>
+  :root{
+    --bg: #07080c;
+    --panel: rgba(16,18,26,0.86);
+    --panel-strong: #11141d;
+    --line: rgba(255,255,255,0.10);
+    --line-soft: rgba(255,255,255,0.06);
+    --text: #f4f6fb;
+    --muted: #9399aa;
+    --muted-2: #6e7586;
+    --accent: #8ffcff;
+    --danger: #ff6b9a;
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --shadow: 0 28px 80px rgba(0,0,0,0.48);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; margin:0; }
+  body{
+    background: radial-gradient(1200px 800px at 20% -10%, #14203a 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+  }
+  .shell{ display:flex; height:100vh; width:100vw; }
+  .panel{
+    width: 360px;
+    min-width: 300px;
+    max-width: 42vw;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    backdrop-filter: blur(18px);
+    overflow-y: auto;
+  }
+  .panel-inner{ padding: 26px 22px 40px; }
+  h1{ font-size: 20px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .subtitle{ font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0 0 22px; }
+  section{ margin-bottom: 24px; }
+  section h2{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted-2);
+    margin: 0 0 12px;
+    font-weight: 700;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+  }
+  .upload-btn{
+    display:block;
+    text-align:center;
+    padding: 13px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--panel-strong);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .upload-btn:hover{ border-color: var(--accent); }
+  #fileLabel{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .color-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .color-card{
+    background: rgba(255,255,255,0.035);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+  }
+  .color-card label{
+    display:block; font-size: 12px; color: var(--muted); margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .color-card input[type="color"]{
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 34px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 0;
+    background: none; cursor: pointer;
+  }
+  .color-card input[type="color"]::-webkit-color-swatch-wrapper{ padding:0; }
+  .color-card input[type="color"]::-webkit-color-swatch{ border:none; border-radius:8px; }
+
+  .slider-row{ margin-bottom: 16px; }
+  .slider-row .row-label{ display:flex; justify-content: space-between; font-size: 12.5px; color: var(--text); margin-bottom: 8px; }
+  .slider-row .row-label span.val{ color: var(--muted); font-variant-numeric: tabular-nums; }
+  input[type="range"]{
+    -webkit-appearance: none; width: 100%; height: 4px; border-radius: 4px;
+    background: var(--line); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none; width: 16px; height:16px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 4px rgba(143,252,255,0.18);
+    cursor: pointer; margin-top: -6px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width: 16px; height:16px; border:none; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 4px rgba(143,252,255,0.18); cursor: pointer;
+  }
+
+  .btn{
+    display:block; width:100%; padding: 12px 14px; margin-bottom: 10px;
+    border-radius: var(--radius-sm); border: 1px solid var(--line);
+    background: var(--panel-strong); color: var(--text);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .btn:hover{ border-color: var(--accent); }
+  .btn.primary{ background: var(--accent); color: #04191b; border-color: var(--accent); }
+  .btn.recording{ background: var(--danger); color: #250008; border-color: var(--danger); }
+  .btn.ghost{ background: transparent; }
+
+  .preset-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .preset-btn{
+    padding: 10px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--panel-strong);
+    color: var(--text);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    cursor: pointer;
+    text-align:center;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .preset-btn:hover{ border-color: var(--accent); }
+  .preset-btn.active{ border-color: var(--accent); background: rgba(143,252,255,0.10); color: var(--accent); }
+
+  .status-row{ display:flex; align-items:center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .dot{ width:8px; height:8px; border-radius:50%; background: var(--muted-2); transition: background .15s ease, box-shadow .15s ease; }
+  .dot.on{ background: var(--danger); box-shadow: 0 0 0 4px rgba(255,107,154,0.22); }
+
+  .stage{ flex:1; display:flex; align-items:center; justify-content:center; padding: 28px; position: relative; }
+  .stage-inner{
+    width:100%; height:100%;
+    border-radius: var(--radius-lg);
+    overflow:hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    background: #000;
+  }
+  canvas{ width:100%; height:100%; display:block; touch-action: none; cursor: crosshair; }
+  .hint{
+    position:absolute; bottom: 46px; left:50%; transform: translateX(-50%);
+    font-size: 12px; color: var(--muted);
+    background: rgba(7,8,12,0.55); border: 1px solid var(--line-soft);
+    padding: 8px 14px; border-radius: 999px; pointer-events:none; backdrop-filter: blur(6px);
+    text-align:center; max-width: 80%;
+  }
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 4px; }
+
+  @media (max-width: 760px){
+    .shell{ flex-direction: column; }
+    .panel{ width:100%; max-width:none; max-height: 50vh; border-right:none; border-bottom:1px solid var(--line); }
+    .stage{ padding: 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <div class="panel-inner">
+        <h1>Digital Imprint Shader</h1>
+        <p class="subtitle">Upload an image. The canvas starts fully digital — wash it with your cursor, or play a preset, to reveal the real photo underneath.</p>
+
+        <section>
+          <h2>Base Image</h2>
+          <label class="upload-btn">
+            <input type="file" id="fileInput" accept="image/png, image/jpeg" hidden />
+            <span id="fileLabel">Upload PNG or JPG</span>
+          </label>
+        </section>
+
+        <section>
+          <h2>Gradient Colors</h2>
+          <div class="color-grid">
+            <div class="color-card"><label>Color 1</label><input type="color" id="color1" value="#4a6c88" /></div>
+            <div class="color-card"><label>Color 2</label><input type="color" id="color2" value="#c7a9f2" /></div>
+            <div class="color-card"><label>Color 3</label><input type="color" id="color3" value="#f3efe7" /></div>
+            <div class="color-card"><label>Color 4</label><input type="color" id="color4" value="#ff662e" /></div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Brush (Manual Wash)</h2>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Brush Size</span><span class="val" id="brushSizeVal"></span></div>
+            <input type="range" id="brushSize" min="4" max="45" step="1" value="18" />
+          </div>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Decay Rate</span><span class="val" id="decayRateVal"></span></div>
+            <input type="range" id="decayRate" min="1" max="100" step="1" value="40" />
+          </div>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Noise Speed</span><span class="val" id="noiseSpeedVal"></span></div>
+            <input type="range" id="noiseSpeed" min="0" max="100" step="1" value="30" />
+          </div>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Noise Scale</span><span class="val" id="noiseScaleVal"></span></div>
+            <input type="range" id="noiseScale" min="0.5" max="8" step="0.1" value="3.8" />
+          </div>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Distortion Amount</span><span class="val" id="distortionVal"></span></div>
+            <input type="range" id="distortion" min="0" max="1" step="0.01" value="0.26" />
+          </div>
+
+          <div class="slider-row">
+            <div class="row-label"><span>Pixel Breakup</span><span class="val" id="pixelBreakupVal"></span></div>
+            <input type="range" id="pixelBreakup" min="2" max="40" step="1" value="12" />
+          </div>
+        </section>
+
+        <section>
+          <h2>Reveal Presets</h2>
+          <div class="slider-row">
+            <div class="row-label"><span>Duration</span><span class="val" id="presetDurationVal"></span></div>
+            <input type="range" id="presetDuration" min="1" max="8" step="0.5" value="3" />
+          </div>
+          <div class="preset-grid" id="presetGrid">
+            <button class="preset-btn" data-preset="1">Wipe Right</button>
+            <button class="preset-btn" data-preset="2">Wipe Down</button>
+            <button class="preset-btn" data-preset="3">Radial Bloom</button>
+            <button class="preset-btn" data-preset="4">Diagonal Sweep</button>
+            <button class="preset-btn" data-preset="5">Venetian Blinds</button>
+            <button class="preset-btn" data-preset="6">Pixel Dissolve</button>
+            <button class="preset-btn" data-preset="7">Spiral Sweep</button>
+            <button class="preset-btn" data-preset="8">Scanline Glitch</button>
+          </div>
+          <button class="btn ghost" id="resetBtn">Reset to Pixelated</button>
+        </section>
+
+        <section>
+          <h2>Export</h2>
+          <button class="btn" id="snapshotBtn">Snapshot PNG</button>
+          <button class="btn primary" id="recordBtn">Start Recording</button>
+          <div class="status-row">
+            <span class="dot" id="recIndicator"></span>
+            <span id="statusText">Ready</span>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div class="stage-inner">
+        <canvas id="glcanvas"></canvas>
+      </div>
+      <div class="hint" id="hintText">Move your cursor across the image to wash away the digital layer</div>
+    </main>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById('glcanvas');
+  const stage = document.getElementById('stage');
+  const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, antialias: true, alpha: false })
+          || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true, antialias: true, alpha: false });
+
+  if (!gl) {
+    document.getElementById('statusText').textContent = 'WebGL is not supported in this browser.';
+    throw new Error('WebGL not supported');
+  }
+
+  // ---------- shader sources ----------
+  const VERT_SRC = `
+    attribute vec2 aPos;
+    void main(){
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+  `;
+
+  // Mask pass: pixel-perfect single brush. The mask FBO is created at the
+  // exact device-pixel size of the letterboxed image rect, so 1 texel == 1
+  // screen pixel and there is no aspect-ratio correction math that could
+  // ever produce a stretched / duplicated brush shape.
+  const MASK_FRAG_SRC = `
+    precision highp float;
+    uniform sampler2D uPrevMask;
+    uniform vec2 uMaskRes;
+    uniform vec2 uMousePx;
+    uniform float uMouseActive;
+    uniform float uBrushRadiusPx;
+    uniform float uDecay;
+    uniform float uDt;
+
+    void main(){
+      vec2 fragPx = vec2(gl_FragCoord.x, uMaskRes.y - gl_FragCoord.y);
+      float prev = texture2D(uPrevMask, fragPx / uMaskRes).r;
+      float decayed = prev * exp(-uDecay * uDt);
+
+      float dist = length(fragPx - uMousePx);
+      float splat = (1.0 - smoothstep(uBrushRadiusPx * 0.55, uBrushRadiusPx, dist)) * uMouseActive;
+
+      float m = max(decayed, splat);
+      gl_FragColor = vec4(m, m, m, 1.0);
+    }
+  `;
+
+  const COMPOSITE_FRAG_SRC = `
+    precision highp float;
+    uniform sampler2D uBaseImage;
+    uniform sampler2D uMask;
+    uniform vec2 uResolution;
+    uniform vec4 uDrawRect;
+    uniform vec3 uColor1;
+    uniform vec3 uColor2;
+    uniform vec3 uColor3;
+    uniform vec3 uColor4;
+    uniform vec3 uMatteColor;
+    uniform float uTime;
+    uniform float uNoiseSpeed;
+    uniform float uNoiseScale;
+    uniform float uDistortion;
+    uniform vec2 uGridCount;
+    uniform float uPresetMode;
+    uniform float uPresetProgress;
+
+    float hash(vec2 p){
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    float vnoise(vec2 p){
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+    }
+
+    float fbm(vec2 p){
+      float v = 0.0;
+      float amp = 0.5;
+      for (int i = 0; i < 3; i++){
+        v += amp * vnoise(p);
+        p *= 2.03;
+        amp *= 0.55;
+      }
+      return v;
+    }
+
+    vec3 gradient4(float t, vec3 c1, vec3 c2, vec3 c3, vec3 c4){
+      t = clamp(t, 0.0, 1.0);
+      if (t < 0.3333) return mix(c1, c2, t / 0.3333);
+      else if (t < 0.6666) return mix(c2, c3, (t - 0.3333) / 0.3333);
+      return mix(c3, c4, (t - 0.6666) / 0.3334);
+    }
+
+    float presetReveal(vec2 uv, vec2 aspectFix){
+      float p = uPresetProgress;
+      float soft = 0.06;
+      int mode = int(uPresetMode + 0.5);
+
+      if (mode == 1){
+        float edge = uv.x;
+        return 1.0 - smoothstep(p - soft, p + soft, edge);
+      }
+      if (mode == 2){
+        float edge = uv.y;
+        return 1.0 - smoothstep(p - soft, p + soft, edge);
+      }
+      if (mode == 3){
+        vec2 c = (uv - 0.5) * aspectFix;
+        float maxD = length(vec2(0.5 * aspectFix.x, 0.5));
+        float edge = length(c) / maxD;
+        return 1.0 - smoothstep(p - soft, p + soft, edge);
+      }
+      if (mode == 4){
+        float edge = (uv.x + uv.y) * 0.5;
+        return 1.0 - smoothstep(p - soft, p + soft, edge);
+      }
+      if (mode == 5){
+        float stripes = 10.0;
+        float sIdx = floor(uv.y * stripes);
+        float stagger = (sIdx / stripes) * 0.4;
+        float localP = clamp((p - stagger) / 0.6, 0.0, 1.0);
+        float edge = uv.x;
+        return 1.0 - smoothstep(localP - soft, localP + soft, edge);
+      }
+      if (mode == 6){
+        vec2 cellCoord = floor(uv * uGridCount);
+        float threshold = hash(cellCoord);
+        return smoothstep(threshold - 0.08, threshold + 0.08, p);
+      }
+      if (mode == 7){
+        vec2 c = (uv - 0.5) * aspectFix;
+        float ang = atan(c.y, c.x) / 6.2831853 + 0.5;
+        float maxD = length(vec2(0.5 * aspectFix.x, 0.5));
+        float d = length(c) / maxD;
+        float edge = fract(ang + d * 0.6);
+        return 1.0 - smoothstep(p - soft, p + soft, edge);
+      }
+      if (mode == 8){
+        float edge = uv.y;
+        float base = 1.0 - smoothstep(p - soft, p + soft, edge);
+        float band = abs(edge - p);
+        float glitch = step(band, 0.02) * hash(vec2(floor(uv.x * 90.0), floor(uTime * 24.0)));
+        return clamp(base + glitch * 0.5, 0.0, 1.0);
+      }
+      return 0.0;
+    }
+
+    void main(){
+      vec2 fragTop = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y);
+      vec2 rel = fragTop - uDrawRect.xy;
+      vec2 imageUV = rel / uDrawRect.zw;
+
+      if (imageUV.x < 0.0 || imageUV.x > 1.0 || imageUV.y < 0.0 || imageUV.y > 1.0){
+        gl_FragColor = vec4(uMatteColor, 1.0);
+        return;
+      }
+
+      vec2 texUV = vec2(imageUV.x, 1.0 - imageUV.y);
+      vec3 baseColor = texture2D(uBaseImage, texUV).rgb;
+      float brushMask = texture2D(uMask, imageUV).r;
+
+      vec2 cell = 1.0 / uGridCount;
+      vec2 blockUV = (floor(imageUV * uGridCount) + 0.5) * cell;
+
+      vec2 n = vec2(
+        fbm(blockUV * uNoiseScale + uTime * uNoiseSpeed),
+        fbm(blockUV * uNoiseScale + uTime * uNoiseSpeed + 100.0)
+      );
+      vec2 distortedUV = clamp(blockUV + (n - 0.5) * uDistortion * 0.35, 0.0, 1.0);
+      vec3 blockColor = texture2D(uBaseImage, vec2(distortedUV.x, 1.0 - distortedUV.y)).rgb;
+
+      float lum = dot(blockColor, vec3(0.299, 0.587, 0.114));
+      lum = clamp(lum + (fbm(blockUV * uNoiseScale * 1.7 - uTime * uNoiseSpeed * 0.6) - 0.5) * 0.25, 0.0, 1.0);
+
+      vec3 digital = gradient4(lum, uColor1, uColor2, uColor3, uColor4);
+
+      vec2 f = fract(imageUV * uGridCount);
+      vec2 edgeDist = min(f, 1.0 - f);
+      float lineW = 0.045;
+      float grid = 1.0 - smoothstep(0.0, lineW, min(edgeDist.x, edgeDist.y));
+      digital = mix(digital, vec3(1.0), grid * 0.32);
+
+      vec2 aspectFix = vec2(uDrawRect.z / uDrawRect.w, 1.0);
+      float pMask = uPresetMode > 0.5 ? presetReveal(imageUV, aspectFix) : 0.0;
+      float reveal = max(pMask, brushMask);
+
+      vec3 finalColor = mix(digital, baseColor, reveal);
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `;
+
+  // ---------- gl helpers ----------
+  function compileShader(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      const log = gl.getShaderInfoLog(s);
+      gl.deleteShader(s);
+      throw new Error('Shader compile error: ' + log);
+    }
+    return s;
+  }
+
+  function createProgram(vsSrc, fsSrc){
+    const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+    const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.bindAttribLocation(p, 0, 'aPos');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)){
+      const log = gl.getProgramInfoLog(p);
+      gl.deleteProgram(p);
+      throw new Error('Program link error: ' + log);
+    }
+    return p;
+  }
+
+  function uniforms(program, names){
+    const out = {};
+    for (const n of names) out[n] = gl.getUniformLocation(program, n);
+    return out;
+  }
+
+  function createFBO(w, h){
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.viewport(0, 0, w, h);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { fb, tex, w, h };
+  }
+
+  function destroyFBO(fbo){
+    if (!fbo) return;
+    gl.deleteFramebuffer(fbo.fb);
+    gl.deleteTexture(fbo.tex);
+  }
+
+  function hexToRGB(hex){
+    const v = hex.replace('#', '');
+    const r = parseInt(v.substring(0, 2), 16) / 255;
+    const g = parseInt(v.substring(2, 4), 16) / 255;
+    const b = parseInt(v.substring(4, 6), 16) / 255;
+    return [r, g, b];
+  }
+
+  function makeDefaultImage(){
+    const c = document.createElement('canvas');
+    c.width = 1600; c.height = 1000;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 1600, 1000);
+    g.addColorStop(0, '#3f5f7a');
+    g.addColorStop(0.4, '#8f7fc9');
+    g.addColorStop(0.72, '#f0ece2');
+    g.addColorStop(1, '#ff662e');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1600, 1000);
+    let seed = 42;
+    function rnd(){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+    for (let i = 0; i < 46; i++){
+      const r = rnd() * 200 + 40;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${(rnd() * 0.08).toFixed(3)})`;
+      ctx.arc(rnd() * 1600, rnd() * 1000, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return c;
+  }
+
+  // ---------- programs & buffers ----------
+  const maskProgram = createProgram(VERT_SRC, MASK_FRAG_SRC);
+  const compositeProgram = createProgram(VERT_SRC, COMPOSITE_FRAG_SRC);
+
+  const maskU = uniforms(maskProgram, ['uPrevMask','uMaskRes','uMousePx','uMouseActive','uBrushRadiusPx','uDecay','uDt']);
+  const compU = uniforms(compositeProgram, ['uBaseImage','uMask','uResolution','uDrawRect','uColor1','uColor2','uColor3','uColor4','uMatteColor','uTime','uNoiseSpeed','uNoiseScale','uDistortion','uGridCount','uPresetMode','uPresetProgress']);
+
+  const quadBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+  function drawQuad(){
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  let maskFBOs = null;
+  let maskReadIndex = 0;
+
+  function recreateMaskFBOs(w, h){
+    w = Math.max(2, Math.min(1600, Math.round(w)));
+    h = Math.max(2, Math.min(1600, Math.round(h)));
+    if (maskFBOs && maskFBOs[0].w === w && maskFBOs[0].h === h) return;
+    if (maskFBOs){ destroyFBO(maskFBOs[0]); destroyFBO(maskFBOs[1]); }
+    maskFBOs = [createFBO(w, h), createFBO(w, h)];
+    maskReadIndex = 0;
+  }
+
+  function clearMaskTrail(){
+    if (!maskFBOs) return;
+    for (const fbo of maskFBOs){
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.fb);
+      gl.viewport(0, 0, fbo.w, fbo.h);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  const baseTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, baseTexture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  // ---------- state ----------
+  const state = {
+    dpr: Math.min(window.devicePixelRatio || 1, 2),
+    imageAspect: 1.6,
+    drawRect: [0, 0, 1, 1],
+    mousePx: [0, 0],
+    mouseActive: false,
+    colors: [hexToRGB('#4a6c88'), hexToRGB('#c7a9f2'), hexToRGB('#f3efe7'), hexToRGB('#ff662e')],
+    brushSizeFrac: 0.18,
+    decay: 1.6,
+    noiseSpeed: 0.3,
+    noiseScale: 3.8,
+    distortion: 0.26,
+    pixelBreakup: 12,
+    startTime: performance.now(),
+    lastTime: performance.now(),
+    isRecording: false,
+    recorder: null,
+    chunks: [],
+    // preset reveal animation
+    presetMode: 0,
+    presetProgress: 0,
+    presetFrom: 0,
+    presetTo: 0,
+    presetStart: 0,
+    presetDurationMs: 3000
+  };
+
+  function uploadImageToTexture(source, aspect){
+    gl.bindTexture(gl.TEXTURE_2D, baseTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    state.imageAspect = aspect;
+    computeDrawRect();
+    clearMaskTrail();
+  }
+
+  // ---------- layout ----------
+  function computeDrawRect(){
+    const cw = canvas.width, ch = canvas.height;
+    if (cw === 0 || ch === 0) return;
+    const canvasAspect = cw / ch;
+    const imgAspect = state.imageAspect;
+    let w, h;
+    if (imgAspect > canvasAspect){ w = cw; h = cw / imgAspect; }
+    else { h = ch; w = ch * imgAspect; }
+    const x = (cw - w) / 2;
+    const y = (ch - h) / 2;
+    state.drawRect = [x, y, w, h];
+    recreateMaskFBOs(w, h);
+  }
+
+  function fitCanvas(){
+    const rect = stage.querySelector('.stage-inner').getBoundingClientRect();
+    state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.round(rect.width * state.dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * state.dpr));
+    computeDrawRect();
+  }
+
+  uploadImageToTexture(makeDefaultImage(), 1.6);
+
+  const ro = new ResizeObserver(() => fitCanvas());
+  ro.observe(stage.querySelector('.stage-inner'));
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
+
+  // ---------- pointer interaction ----------
+  function updateMouseFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * state.dpr;
+    const py = (e.clientY - rect.top) * state.dpr;
+    const [dx, dy, dw, dh] = state.drawRect;
+    const relX = px - dx;
+    const relY = py - dy;
+    state.mousePx = [relX, relY];
+    const margin = 24;
+    state.mouseActive = relX > -margin && relX < dw + margin && relY > -margin && relY < dh + margin;
+  }
+
+  canvas.addEventListener('pointermove', (e) => { updateMouseFromEvent(e); });
+  canvas.addEventListener('pointerdown', (e) => { updateMouseFromEvent(e); });
+  canvas.addEventListener('pointerleave', () => { state.mouseActive = false; });
+  canvas.addEventListener('pointercancel', () => { state.mouseActive = false; });
+
+  // ---------- UI wiring ----------
+  const els = {
+    fileInput: document.getElementById('fileInput'),
+    fileLabel: document.getElementById('fileLabel'),
+    color1: document.getElementById('color1'),
+    color2: document.getElementById('color2'),
+    color3: document.getElementById('color3'),
+    color4: document.getElementById('color4'),
+    brushSize: document.getElementById('brushSize'),
+    brushSizeVal: document.getElementById('brushSizeVal'),
+    decayRate: document.getElementById('decayRate'),
+    decayRateVal: document.getElementById('decayRateVal'),
+    noiseSpeed: document.getElementById('noiseSpeed'),
+    noiseSpeedVal: document.getElementById('noiseSpeedVal'),
+    noiseScale: document.getElementById('noiseScale'),
+    noiseScaleVal: document.getElementById('noiseScaleVal'),
+    distortion: document.getElementById('distortion'),
+    distortionVal: document.getElementById('distortionVal'),
+    pixelBreakup: document.getElementById('pixelBreakup'),
+    pixelBreakupVal: document.getElementById('pixelBreakupVal'),
+    presetDuration: document.getElementById('presetDuration'),
+    presetDurationVal: document.getElementById('presetDurationVal'),
+    presetGrid: document.getElementById('presetGrid'),
+    resetBtn: document.getElementById('resetBtn'),
+    snapshotBtn: document.getElementById('snapshotBtn'),
+    recordBtn: document.getElementById('recordBtn'),
+    recIndicator: document.getElementById('recIndicator'),
+    statusText: document.getElementById('statusText'),
+    hintText: document.getElementById('hintText')
+  };
+
+  els.fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    els.fileLabel.textContent = file.name;
+    const img = new Image();
+    img.onload = () => {
+      uploadImageToTexture(img, img.naturalWidth / img.naturalHeight);
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  [['color1',0],['color2',1],['color3',2],['color4',3]].forEach(([id, idx]) => {
+    els[id].addEventListener('input', (e) => { state.colors[idx] = hexToRGB(e.target.value); });
+  });
+
+  function syncBrush(){ state.brushSizeFrac = Number(els.brushSize.value) / 100; els.brushSizeVal.textContent = els.brushSize.value; }
+  function syncDecay(){
+    const v = Number(els.decayRate.value);
+    state.decay = 0.25 + (v / 100) * 5.75;
+    els.decayRateVal.textContent = v;
+  }
+  function syncNoiseSpeed(){ const v = Number(els.noiseSpeed.value); state.noiseSpeed = (v / 100) * 1.4; els.noiseSpeedVal.textContent = v; }
+  function syncNoiseScale(){ state.noiseScale = Number(els.noiseScale.value); els.noiseScaleVal.textContent = state.noiseScale.toFixed(1); }
+  function syncDistortion(){ state.distortion = Number(els.distortion.value); els.distortionVal.textContent = state.distortion.toFixed(2); }
+  function syncPixelBreakup(){ state.pixelBreakup = Number(els.pixelBreakup.value); els.pixelBreakupVal.textContent = state.pixelBreakup + ' px'; }
+  function syncPresetDuration(){ const v = Number(els.presetDuration.value); state.presetDurationMs = v * 1000; els.presetDurationVal.textContent = v.toFixed(1) + 's'; }
+
+  els.brushSize.addEventListener('input', syncBrush);
+  els.decayRate.addEventListener('input', syncDecay);
+  els.noiseSpeed.addEventListener('input', syncNoiseSpeed);
+  els.noiseScale.addEventListener('input', syncNoiseScale);
+  els.distortion.addEventListener('input', syncDistortion);
+  els.pixelBreakup.addEventListener('input', syncPixelBreakup);
+  els.presetDuration.addEventListener('input', syncPresetDuration);
+  syncBrush(); syncDecay(); syncNoiseSpeed(); syncNoiseScale(); syncDistortion(); syncPixelBreakup(); syncPresetDuration();
+
+  // ---------- preset reveal animations ----------
+  function setActivePresetButton(id){
+    els.presetGrid.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.classList.toggle('active', Number(btn.dataset.preset) === id);
+    });
+  }
+
+  function playPreset(id){
+    state.presetMode = id;
+    state.presetFrom = state.presetProgress;
+    state.presetTo = 1;
+    state.presetStart = performance.now();
+    setActivePresetButton(id);
+    els.hintText.textContent = 'Playing preset animation…';
+  }
+
+  els.presetGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    playPreset(Number(btn.dataset.preset));
+  });
+
+  els.resetBtn.addEventListener('click', () => {
+    state.presetFrom = state.presetProgress;
+    state.presetTo = 0;
+    state.presetStart = performance.now();
+    clearMaskTrail();
+    setActivePresetButton(-1);
+    els.hintText.textContent = 'Move your cursor across the image to wash away the digital layer';
+  });
+
+  function updatePresetProgress(now){
+    const t = state.presetDurationMs > 0 ? Math.min(1, (now - state.presetStart) / state.presetDurationMs) : 1;
+    const eased = t * t * (3 - 2 * t);
+    state.presetProgress = state.presetFrom + (state.presetTo - state.presetFrom) * eased;
+  }
+
+  // ---------- export ----------
+  els.snapshotBtn.addEventListener('click', () => {
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'digital-imprint-snapshot.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      els.statusText.textContent = 'Snapshot saved';
+    }, 'image/png');
+  });
+
+  function pickMimeType(){
+    const candidates = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
+    for (const c of candidates){
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return '';
+  }
+
+  function startRecording(){
+    if (!canvas.captureStream){
+      els.statusText.textContent = 'Recording not supported in this browser';
+      return;
+    }
+    const stream = canvas.captureStream(30);
+    const mime = pickMimeType();
+    try{
+      state.recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    } catch (err){
+      els.statusText.textContent = 'Recording failed to start';
+      return;
+    }
+    state.chunks = [];
+    state.recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) state.chunks.push(e.data); };
+    state.recorder.onstop = () => {
+      const type = state.recorder.mimeType || 'video/webm';
+      const blob = new Blob(state.chunks, { type });
+      const ext = type.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `digital-imprint-recording.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      els.statusText.textContent = 'Recording saved (' + ext.toUpperCase() + ')';
+    };
+    state.recorder.start();
+    state.isRecording = true;
+    els.recordBtn.textContent = 'Stop & Save';
+    els.recordBtn.classList.add('recording');
+    els.recordBtn.classList.remove('primary');
+    els.recIndicator.classList.add('on');
+    els.statusText.textContent = 'Recording canvas interaction…';
+  }
+
+  function stopRecording(){
+    if (state.recorder && state.recorder.state !== 'inactive'){
+      state.recorder.stop();
+    }
+    state.isRecording = false;
+    els.recordBtn.textContent = 'Start Recording';
+    els.recordBtn.classList.remove('recording');
+    els.recordBtn.classList.add('primary');
+    els.recIndicator.classList.remove('on');
+  }
+
+  els.recordBtn.addEventListener('click', () => {
+    if (state.isRecording) stopRecording(); else startRecording();
+  });
+
+  // ---------- render loop ----------
+  function renderMaskPass(dt){
+    if (!maskFBOs) return;
+    const writeIndex = 1 - maskReadIndex;
+    const fbo = maskFBOs[writeIndex];
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.fb);
+    gl.viewport(0, 0, fbo.w, fbo.h);
+    gl.useProgram(maskProgram);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, maskFBOs[maskReadIndex].tex);
+    gl.uniform1i(maskU.uPrevMask, 0);
+
+    gl.uniform2f(maskU.uMaskRes, fbo.w, fbo.h);
+    gl.uniform2f(maskU.uMousePx, state.mousePx[0], state.mousePx[1]);
+    gl.uniform1f(maskU.uMouseActive, state.mouseActive ? 1.0 : 0.0);
+    gl.uniform1f(maskU.uBrushRadiusPx, state.brushSizeFrac * state.drawRect[3]);
+    gl.uniform1f(maskU.uDecay, state.decay);
+    gl.uniform1f(maskU.uDt, dt);
+
+    drawQuad();
+    maskReadIndex = writeIndex;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  function renderComposite(){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(compositeProgram);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, baseTexture);
+    gl.uniform1i(compU.uBaseImage, 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, maskFBOs[maskReadIndex].tex);
+    gl.uniform1i(compU.uMask, 1);
+
+    gl.uniform2f(compU.uResolution, canvas.width, canvas.height);
+    gl.uniform4f(compU.uDrawRect, state.drawRect[0], state.drawRect[1], state.drawRect[2], state.drawRect[3]);
+    gl.uniform3f(compU.uColor1, state.colors[0][0], state.colors[0][1], state.colors[0][2]);
+    gl.uniform3f(compU.uColor2, state.colors[1][0], state.colors[1][1], state.colors[1][2]);
+    gl.uniform3f(compU.uColor3, state.colors[2][0], state.colors[2][1], state.colors[2][2]);
+    gl.uniform3f(compU.uColor4, state.colors[3][0], state.colors[3][1], state.colors[3][2]);
+    gl.uniform3f(compU.uMatteColor, 0.027, 0.031, 0.047);
+    gl.uniform1f(compU.uTime, (performance.now() - state.startTime) / 1000);
+    gl.uniform1f(compU.uNoiseSpeed, state.noiseSpeed);
+    gl.uniform1f(compU.uNoiseScale, state.noiseScale);
+    gl.uniform1f(compU.uDistortion, state.distortion);
+    gl.uniform1f(compU.uPresetMode, state.presetMode);
+    gl.uniform1f(compU.uPresetProgress, state.presetProgress);
+
+    const dw = Math.max(state.drawRect[2], 1);
+    const dh = Math.max(state.drawRect[3], 1);
+    const gx = Math.max(2, dw / state.pixelBreakup);
+    const gy = Math.max(2, dh / state.pixelBreakup);
+    gl.uniform2f(compU.uGridCount, gx, gy);
+
+    drawQuad();
+  }
+
+  function animate(now){
+    const dt = Math.min((now - state.lastTime) / 1000, 0.1);
+    state.lastTime = now;
+    updatePresetProgress(now);
+    renderMaskPass(dt);
+    renderComposite();
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
