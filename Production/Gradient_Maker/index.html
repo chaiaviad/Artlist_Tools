@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Depth Gradient Motion</title>
+<title>Gradient Maker · Artlist</title>
 <style>
 /* External Google Fonts import removed for internal / no-external-access build.
    Falls back to system UI fonts (declared in font-family stacks below). */
@@ -22,9 +22,9 @@
   --txt: rgba(255,255,255,.92);
   --muted: rgba(255,255,255,.58);
   --dim: rgba(255,255,255,.36);
-  --accent: #ff9f0a;
-  --abg: rgba(255,159,10,.13);
-  --aline: rgba(255,159,10,.48);
+  --accent: #f8da1f;
+  --abg: rgba(248,218,31,.13);
+  --aline: rgba(248,218,31,.48);
   --green: #30d158;
   --gbg: rgba(48,209,88,.13);
   --gline: rgba(48,209,88,.40);
@@ -32,9 +32,9 @@
   --rbg: rgba(255,69,58,.14);
   --rline: rgba(255,69,58,.45);
   --blue: #5e9eff;
-  --radius: 12px;
+  --radius: 15px;
   --panel-w: 430px;
-  --focus: 0 0 0 2px rgba(255,159,10,.28);
+  --focus: 0 0 0 2px rgba(248,218,31,.30);
 }
 
 html,
@@ -1079,8 +1079,8 @@ input[type=range]::-moz-range-thumb {
 
   <aside id="right">
     <div id="rightHead">
-      <h1>Depth Gradient Motion</h1>
-      <p>Depth-based gradient color mapping for image, video, and camera input.</p>
+      <h1>Gradient Maker</h1>
+      <p>Depth-based gradient color mapping for image, video, and camera — an Artlist production tool.</p>
     </div>
     
     
@@ -1392,7 +1392,10 @@ const presets = {
   // Single colour, opacity-only gradients (transparent -> opaque of one hue).
   fade:[{pos:0,color:'#FFFFFF',alpha:0},{pos:100,color:'#FFFFFF',alpha:1}],
   shadow:[{pos:0,color:'#000000',alpha:0},{pos:100,color:'#000000',alpha:0.85}],
-  glow:[{pos:0,color:'#FF8A3D',alpha:0},{pos:100,color:'#FF8A3D',alpha:1}]
+  glow:[{pos:0,color:'#FF8A3D',alpha:0},{pos:100,color:'#FF8A3D',alpha:1}],
+  // Solid fill that reveals the image: fully opaque solid -> transparent (photo shows through).
+  // Animate phase/motion to sweep the solid off and reveal the source.
+  reveal:[{pos:0,color:'#0B0C0F',alpha:1},{pos:70,color:'#0B0C0F',alpha:1},{pos:100,color:'#0B0C0F',alpha:0}]
 };
 function uid(seed=''){return (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}_${seed}_${Math.random().toString(36).slice(2)}`;}
 function clampAlpha(a){const n=Number(a); return Number.isFinite(n)?clamp(n,0,1):1;}
