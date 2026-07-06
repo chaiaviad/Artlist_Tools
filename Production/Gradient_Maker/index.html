@@ -60,22 +60,42 @@ option {
   color: #111;
   background: #fff;
 }
-.timelineEnds {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4px;
-  font-size: 8.6px;
-  font-weight: 800;
-  letter-spacing: .6px;
-  text-transform: uppercase;
-  color: var(--dim);
+#timeline {
+  position: absolute;
+  left: 12px; right: 12px; bottom: 12px;
+  z-index: 6;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(12,13,16,.82);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
 }
-#reverseBtn.on,
-#loopBtn.on {
-  color: #0b0c0f;
-  background: var(--accent);
-  border-color: var(--accent);
+#timeline .tlBtn {
+  flex: 0 0 auto;
+  height: 26px; min-width: 26px; padding: 0 8px;
+  border-radius: 7px; border: 1px solid var(--line2);
+  background: rgba(255,255,255,.05); color: var(--txt);
+  font-size: 12px; font-weight: 800; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
 }
+#timeline .tlBtn:hover { border-color: var(--accent); color: #fff; }
+#timeline .tlBtn.on { background: var(--accent); border-color: var(--accent); color: #0b0c0f; }
+#timeline .tlKey { color: var(--accent); }
+#tlTrack { position: relative; flex: 1 1 auto; height: 26px; display: flex; align-items: center; }
+#tlTrack input[type=range] { width: 100%; margin: 0; accent-color: var(--accent); position: relative; z-index: 2; }
+#tlMarkers { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 3; }
+.kfMark {
+  position: absolute; top: 50%;
+  width: 11px; height: 11px;
+  background: var(--accent); border: 1px solid #0b0c0f;
+  transform: translate(-50%,-50%) rotate(45deg);
+  border-radius: 2px; pointer-events: auto; cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+}
+.kfMark.selected { background: #fff; box-shadow: 0 0 0 2px var(--accent); }
+#timeline .tlPos { flex: 0 0 auto; min-width: 38px; text-align: center; font-size: 10px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 button {
   appearance: none;
@@ -1090,6 +1110,18 @@ input[type=range]::-moz-range-thumb {
         <span class="badge" id="motionBadge">Motion Off</span>
       </div>
       <div id="toast"></div>
+      <div id="timeline" aria-label="Animation timeline">
+        <button id="tlPlayBtn" class="tlBtn tlPlay" type="button" title="Play / pause">▶</button>
+        <button id="reverseBtn" class="tlBtn" type="button" title="Reverse animation direction">⇄</button>
+        <div id="tlTrack">
+          <input type="range" id="timelineRange" min="0" max="1000" value="0" title="Scrub. The playhead moves while playing.">
+          <div id="tlMarkers"></div>
+        </div>
+        <span id="timelineVal" class="tlPos">0%</span>
+        <button id="tlAddKey" class="tlBtn tlKey" type="button" title="Add / update a gradient keyframe at the playhead">◆＋</button>
+        <button id="tlDelKey" class="tlBtn" type="button" title="Delete the selected keyframe">◆－</button>
+        <button id="loopBtn" class="tlBtn on" type="button" title="Loop on/off (off = play once, stop at end)">⟳</button>
+      </div>
     </div>
   </section>
 
@@ -1182,15 +1214,8 @@ input[type=range]::-moz-range-thumb {
             <div class="lr"><span class="lb">Motion</span><span class="vl" id="motionStateVal">Off</span></div>
             <button class="mainBtn playBtn" id="motionPlayBtn" type="button"><span class="btnIcon">▶</span>Play</button>
           </div>
-          <div class="flatField">
-            <div class="lr"><span class="lb">Timeline</span><span class="vl" id="timelineVal">0%</span></div>
-            <input type="range" id="timelineRange" min="0" max="1000" value="0" title="Animation position. Drag to scrub; the playhead moves while playing.">
-            <div class="timelineEnds"><span>Start</span><span>End</span></div>
-          </div>
-          <div class="flatGrid two">
-            <button class="toggleBtn" id="reverseBtn" type="button" title="Reverse the animation direction (e.g. so it ends on the image instead of starting on it).">⇄ Reverse</button>
-            <button class="toggleBtn on" id="loopBtn" type="button" title="Loop continuously, or play once and stop at the end for a clear start → end.">Loop On</button>
-          </div>
+          <!-- Timeline, Reverse, Loop and keyframe controls now live in the floating
+               timeline bar overlaid at the bottom of the preview (#timeline). -->
           <div class="flatField">
             <div class="lr"><span class="lb">Speed</span><span class="vl" id="speedVal">0.35 cps</span></div>
             <input type="range" id="speedRange" min="0" max="200" value="35" data-default="35">
@@ -1570,7 +1595,7 @@ function depthValueAt(rawDepth,x,y,dstW,dstH){
 function adjustedDepthValue(rawValue){let t=rawValue; const contrast=Number(els.contrastRange.value)/100; const gamma=Number(els.gammaRange.value)/100; t=(t-.5)*contrast+.5; t=clamp(t,0,1); t=Math.pow(t,Math.max(.05,gamma)); if(state.invertDepth) t=1-t; return clamp(t,0,1);}
 function drawDepthPreview(){if(!state.depthOutput?.depth) return; const raw=state.depthOutput.depth; const w=sourceCanvas.width, h=sourceCanvas.height; const imageData=depthPreviewCtx.createImageData(w,h); const out=imageData.data; for(let y=0;y<h;y++){for(let x=0;x<w;x++){const rawValue=depthValueAt(raw,x,y,w,h); const v=Math.round(adjustedDepthValue(rawValue)*255); const i=(y*w+x)*4; out[i]=v; out[i+1]=v; out[i+2]=v; out[i+3]=255;}} depthPreviewCtx.putImageData(imageData,0,0);} 
 function blendPixel(src,grad,alpha,mode){const out=[src[0],src[1],src[2]]; if(mode==='normal'){out[0]=mix(src[0],grad[0],alpha); out[1]=mix(src[1],grad[1],alpha); out[2]=mix(src[2],grad[2],alpha); return out;} let blended=grad; if(mode==='screen'){blended=[255-(255-src[0])*(255-grad[0])/255,255-(255-src[1])*(255-grad[1])/255,255-(255-src[2])*(255-grad[2])/255];} else if(mode==='multiply'){blended=[src[0]*grad[0]/255,src[1]*grad[1]/255,src[2]*grad[2]/255];} else if(mode==='overlay'){blended=[0,1,2].map(k=>src[k]<128?2*src[k]*grad[k]/255:255-2*(255-src[k])*(255-grad[k])/255);} out[0]=mix(src[0],blended[0],alpha); out[1]=mix(src[1],blended[1],alpha); out[2]=mix(src[2],blended[2],alpha); return out;}
-function composeResult(){const hasSource=drawSourceFrame(); if(!hasSource) return; const w=sourceCanvas.width, h=sourceCanvas.height; if(els.renderCanvas.width!==w || els.renderCanvas.height!==h) setCanvasSize(w,h); if(state.currentView==='source' || !state.depthOutput?.depth){ctx.clearRect(0,0,w,h); ctx.drawImage(sourceCanvas,0,0); return;} if(state.currentView==='depth'){drawDepthPreview(); ctx.clearRect(0,0,w,h); ctx.drawImage(depthPreviewCanvas,0,0); return;} const raw=state.depthOutput.depth; const source=sourceCtx.getImageData(0,0,w,h); const out=ctx.createImageData(w,h); const alpha=Number(els.blendRange.value)/100; const lumaHold=Number(els.lumaRange.value)/100; const softness=Number(els.softnessRange.value); const offset=wrap01(Number(els.phaseRange.value)/100 + state.motionPhase); const mode=els.blendMode.value; const lutSize=1024; const lut=new Array(lutSize); for(let i=0;i<lutSize;i++) lut[i]=colorAtDepth(i/(lutSize-1), offset);
+function composeResult(){const hasSource=drawSourceFrame(); if(!hasSource) return; const w=sourceCanvas.width, h=sourceCanvas.height; if(els.renderCanvas.width!==w || els.renderCanvas.height!==h) setCanvasSize(w,h); if(state.currentView==='source' || !state.depthOutput?.depth){ctx.clearRect(0,0,w,h); ctx.drawImage(sourceCanvas,0,0); return;} if(state.currentView==='depth'){drawDepthPreview(); ctx.clearRect(0,0,w,h); ctx.drawImage(depthPreviewCanvas,0,0); return;} const raw=state.depthOutput.depth; const source=sourceCtx.getImageData(0,0,w,h); const out=ctx.createImageData(w,h); const alpha=Number(els.blendRange.value)/100; const lumaHold=Number(els.lumaRange.value)/100; const softness=Number(els.softnessRange.value); const offset=renderOffset(); const mode=els.blendMode.value; const lutSize=1024; const lut=new Array(lutSize); for(let i=0;i<lutSize;i++) lut[i]=colorAtDepth(i/(lutSize-1), offset);
   for(let y=0;y<h;y++){
     for(let x=0;x<w;x++){
       const i=(y*w+x)*4; let rawValue=depthValueAt(raw,x,y,w,h); if(softness>0){let sum=rawValue, count=1, r=softness; for(let yy=-r;yy<=r;yy+=r){for(let xx=-r;xx<=r;xx+=r){if(xx===0&&yy===0) continue; const nx=clamp(x+xx,0,w-1), ny=clamp(y+yy,0,h-1); sum+=depthValueAt(raw,nx,ny,w,h); count++;}} rawValue=sum/count;}
@@ -1635,7 +1660,7 @@ function renderLoop(now){
   }
 }
 function setView(view){state.currentView=view; els.viewChips.querySelectorAll('.chip').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view)); markRender();}
-function toggleMotion(force=null){state.motionPlaying=(force===null)?!state.motionPlaying:!!force; els.motionPlayBtn.innerHTML=state.motionPlaying?'<span class="btnIcon">⏸</span>Pause':'<span class="btnIcon">▶</span>Play'; els.motionPlayBtn.classList.toggle('on',state.motionPlaying); updateBadges(); markRender();}
+function toggleMotion(force=null){state.motionPlaying=(force===null)?!state.motionPlaying:!!force; els.motionPlayBtn.innerHTML=state.motionPlaying?'<span class="btnIcon">⏸</span>Pause':'<span class="btnIcon">▶</span>Play'; els.motionPlayBtn.classList.toggle('on',state.motionPlaying); if(els.tlPlayBtn){els.tlPlayBtn.textContent=state.motionPlaying?'⏸':'▶'; els.tlPlayBtn.classList.toggle('on',state.motionPlaying);} updateBadges(); markRender();}
 function syncTimeline(){if(!els.timelineRange || state.scrubbing) return; const p=(state.loop===false)?clamp(state.motionPhase,0,1):wrap01(state.motionPhase); els.timelineRange.value=Math.round(p*1000); if(els.timelineVal) els.timelineVal.textContent=`${Math.round(p*100)}%`;}
 function updateDirectionUI(){if(els.directionChips) els.directionChips.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',Number(b.dataset.dir)===state.direction)); if(els.reverseBtn) els.reverseBtn.classList.toggle('on',state.direction===-1);}
 async function toggleVideoPlayback(){if(state.sourceType!=='video') return; if(state.video.paused){try{await state.video.play(); els.mediaPlayBtn.innerHTML='<span class="btnIcon">⏸</span>Pause';}catch(err){setStatus(`Playback error: ${err.message || err}`,true);}}else{state.video.pause(); els.mediaPlayBtn.innerHTML='<span class="btnIcon">▶</span>Source';} markRender();}
@@ -2335,7 +2360,7 @@ function tryCompositeWebGL(){
   const alpha=Number(els.blendRange.value)/100;
   const contrast=Number(els.contrastRange.value)/100;
   const gamma=Number(els.gammaRange.value)/100;
-  const offset=wrap01(Number(els.phaseRange.value)/100 + state.motionPhase);
+  const offset=renderOffset();
   gl.uniform2f(u.u_resolution,w,h);
   gl.uniform1f(u.u_blend,alpha);
   gl.uniform1f(u.u_contrast,contrast);
@@ -2370,7 +2395,7 @@ function composeResultCPU(){
   const alpha=Number(els.blendRange.value)/100;
   const lumaHold=Number(els.lumaRange.value)/100;
   const softness=Number(els.softnessRange.value);
-  const offset=wrap01(Number(els.phaseRange.value)/100 + state.motionPhase);
+  const offset=renderOffset();
   const mode=els.blendMode.value;
   const parallax=Number(els.parallaxRange?.value||0);
   const viewX=state.parallaxX||0, viewY=state.parallaxY||0;
@@ -2847,7 +2872,7 @@ function tryParallax3DWebGL(){
     gl.uniform1f(u.u_gamma,Number(els.gammaRange.value)/100);
     gl.uniform1f(u.u_invert,state.invertDepth?1:0);
     gl.uniform1f(u.u_blend,Number(els.blendRange.value)/100);
-    gl.uniform1f(u.u_phase,wrap01(Number(els.phaseRange.value)/100 + state.motionPhase));
+    gl.uniform1f(u.u_phase,renderOffset());
     gl.uniform1f(u.u_scale,Number(els.scaleRange.value)/100);
     gl.uniform1f(u.u_lumaHold,Number(els.lumaRange.value)/100);
     gl.uniform1f(u.u_softness,Number(els.softnessRange.value));
@@ -3224,7 +3249,7 @@ function bindEnhancements(){
 
 /* ---- V15 naming + smooth wrap quality patch ---- */
 function gradientColorAtBase(t){
-  const stops=currentSortedStops();
+  const stops=renderStops();
   if(!stops.length) return [255,255,255];
   if(stops.length===1) return hexToRgb(stops[0].color);
   t=clamp(t,0,1);
@@ -3262,7 +3287,7 @@ function colorAtGradient(t){ return gradientColorAt(t); }
 // ---- Gradient opacity (alpha) sampling, parallel to the colour samplers ----
 function stopAlpha(s){return clampAlpha(s.alpha);}
 function gradientAlphaAtBase(t){
-  const stops=currentSortedStops();
+  const stops=renderStops();
   if(!stops.length) return 1;
   if(stops.length===1) return stopAlpha(stops[0]);
   t=clamp(t,0,1);
@@ -3319,6 +3344,77 @@ try{init();}catch(err){
   console.error('Init error:',err);
   try{setStatus(`Init error: ${err.message || err}`,true);}catch(e){}
 }
+
+/* ============================================================
+   Keyframe timeline — animate the gradient between snapshots.
+   Each keyframe stores the full gradient (stops: pos+color+alpha)
+   at a timeline position t (0..1 = motionPhase). Between keyframes
+   the gradient is interpolated. When keyframes exist the playhead
+   drives keyframe interpolation instead of the phase sweep.
+   ============================================================ */
+function kfList(){ return (state.keyframes || []); }
+function kfSorted(){ return kfList().slice().sort((a,b)=>a.t-b.t); }
+function sortPlain(list){ return list.slice().sort((a,b)=>a.pos-b.pos); }
+function cloneStopsPlain(list){ return list.map(s=>({pos:clamp(Number(s.pos),0,100),color:normalizeHex(s.color)||'#FFFFFF',alpha:clampAlpha(s.alpha)})); }
+function renderOffset(){ const base=Number(els.phaseRange.value)/100; return wrap01(base + (kfList().length>0 ? 0 : state.motionPhase)); }
+function sampleColorFrom(stops,t){ stops=sortPlain(stops); if(!stops.length) return [255,255,255]; if(stops.length===1) return hexToRgb(stops[0].color); t=clamp(t,0,1); const p=t*100; if(p<=stops[0].pos) return hexToRgb(stops[0].color); if(p>=stops[stops.length-1].pos) return hexToRgb(stops[stops.length-1].color); for(let i=0;i<stops.length-1;i++){const a=stops[i],b=stops[i+1]; if(p>=a.pos&&p<=b.pos){const span=Math.max(0.0001,b.pos-a.pos); return interpolateRgb(hexToRgb(a.color),hexToRgb(b.color),(p-a.pos)/span);}} return hexToRgb(stops[stops.length-1].color); }
+function sampleAlphaFrom(stops,t){ stops=sortPlain(stops); if(!stops.length) return 1; if(stops.length===1) return clampAlpha(stops[0].alpha); t=clamp(t,0,1); const p=t*100; if(p<=stops[0].pos) return clampAlpha(stops[0].alpha); if(p>=stops[stops.length-1].pos) return clampAlpha(stops[stops.length-1].alpha); for(let i=0;i<stops.length-1;i++){const a=stops[i],b=stops[i+1]; if(p>=a.pos&&p<=b.pos){const span=Math.max(0.0001,b.pos-a.pos); return mix(clampAlpha(a.alpha),clampAlpha(b.alpha),(p-a.pos)/span);}} return clampAlpha(stops[stops.length-1].alpha); }
+function interpStops(A,B,f){
+  const a=sortPlain(A), b=sortPlain(B);
+  if(a.length===b.length){
+    // Same structure: interpolate each stop's position, colour and alpha.
+    // This lets a moving alpha edge sweep the reveal across the depth field.
+    return a.map((s,i)=>({ pos:mix(s.pos,b[i].pos,f), color:rgbToHex(interpolateRgb(hexToRgb(s.color),hexToRgb(b[i].color),f)), alpha:mix(clampAlpha(s.alpha),clampAlpha(b[i].alpha),f) }));
+  }
+  // Different structure: resample both to a common profile and cross-fade.
+  const N=24, out=[];
+  for(let i=0;i<N;i++){ const t=i/(N-1); out.push({ pos:t*100, color:rgbToHex(interpolateRgb(sampleColorFrom(a,t),sampleColorFrom(b,t),f)), alpha:mix(sampleAlphaFrom(a,t),sampleAlphaFrom(b,t),f) }); }
+  return out;
+}
+function interpolatedStopsAt(pos){
+  const kfs=kfSorted(); if(!kfs.length) return null;
+  if(kfs.length===1) return kfs[0].stops;
+  if(pos<=kfs[0].t) return kfs[0].stops;
+  if(pos>=kfs[kfs.length-1].t) return kfs[kfs.length-1].stops;
+  for(let i=0;i<kfs.length-1;i++){ const a=kfs[i],b=kfs[i+1]; if(pos>=a.t&&pos<=b.t){ const f=(pos-a.t)/Math.max(1e-6,(b.t-a.t)); return interpStops(a.stops,b.stops,f); } }
+  return kfs[kfs.length-1].stops;
+}
+function renderStops(){
+  const kfs=kfSorted();
+  if(!kfs.length) return currentSortedStops();
+  if(!state.motionPlaying){ const near=kfs.find(k=>Math.abs(k.t-state.motionPhase)<0.006); if(near && near.id===state.selectedKf) return currentSortedStops(); }
+  return sortPlain(interpolatedStopsAt(state.motionPhase)||currentSortedStops());
+}
+function renderKfMarkers(){
+  const wrap=els.tlMarkers; if(!wrap) return; wrap.innerHTML='';
+  kfSorted().forEach(k=>{ const d=document.createElement('div'); d.className='kfMark'+(k.id===state.selectedKf?' selected':''); d.style.left=(k.t*100)+'%'; d.title=`Keyframe @ ${Math.round(k.t*100)}%  (click to edit)`; d.addEventListener('pointerdown',e=>e.stopPropagation()); d.addEventListener('click',e=>{e.stopPropagation(); selectKeyframe(k.id);}); wrap.appendChild(d); });
+}
+function selectKeyframe(id){ const k=kfList().find(x=>x.id===id); if(!k) return; state.selectedKf=id; if(state.motionPlaying) toggleMotion(false); state.motionPhase=k.t; syncTimeline(); state.stops=cloneStops(k.stops); state.selectedStopId=state.stops[0]?.id??null; state.activePreset=''; renderPresets(); renderGradientEditor(); renderKfMarkers(); markRender(); }
+function addOrUpdateKeyframe(){
+  if(!state.keyframes) state.keyframes=[];
+  const t=clamp(state.motionPhase,0,1);
+  const snap=cloneStopsPlain(currentSortedStops());
+  const existing=state.keyframes.find(k=>Math.abs(k.t-t)<0.006);
+  if(existing){ existing.stops=snap; state.selectedKf=existing.id; showToast(`Keyframe updated @ ${Math.round(t*100)}%`); }
+  else { const k={id:uid('kf'),t,stops:snap}; state.keyframes.push(k); state.selectedKf=k.id; showToast(`Keyframe added @ ${Math.round(t*100)}%`); }
+  renderKfMarkers(); markRender();
+}
+function deleteSelectedKeyframe(){
+  if(!state.keyframes||!state.keyframes.length){ showToast('No keyframes'); return; }
+  let idx=state.keyframes.findIndex(k=>k.id===state.selectedKf);
+  if(idx<0) idx=state.keyframes.length-1;
+  state.keyframes.splice(idx,1);
+  state.selectedKf=state.keyframes[Math.max(0,idx-1)]?.id||state.keyframes[0]?.id||null;
+  renderKfMarkers(); showToast('Keyframe deleted'); markRender();
+}
+(function bindTimelineExtras(){
+  if(!state.keyframes) state.keyframes=[];
+  els.tlPlayBtn=$('tlPlayBtn'); els.tlAddKey=$('tlAddKey'); els.tlDelKey=$('tlDelKey'); els.tlMarkers=$('tlMarkers');
+  if(els.tlPlayBtn){ els.tlPlayBtn.textContent=state.motionPlaying?'⏸':'▶'; els.tlPlayBtn.addEventListener('click',()=>els.motionPlayBtn.click()); }
+  if(els.tlAddKey) els.tlAddKey.addEventListener('click',addOrUpdateKeyframe);
+  if(els.tlDelKey) els.tlDelKey.addEventListener('click',deleteSelectedKeyframe);
+  renderKfMarkers();
+})();
 </script>
 </body>
 </html>
