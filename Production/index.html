@@ -55,13 +55,15 @@ const TOOLS = [
   { folder:"Digital_Shader/",            title:"Digital Shader",  production:true, beta:true },
   { folder:"../Collab_Maker/",           title:"Collab Maker" },
   { folder:"../Thumbnail_Banner_Maker/", title:"Thumbnail & Banner Maker" },
+  { file:"../Companion/Companion.exe",   title:"Companion", download:true },
 ];
 const grid=document.getElementById("grid");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // production tools first, then the rest — stable within each group
 TOOLS.slice().sort((a,b)=>(b.production?1:0)-(a.production?1:0)).forEach(t=>{
   const a=document.createElement("a");
-  a.className="card"; a.href=t.folder;
+  a.className="card"; a.href=t.download?t.file:t.folder;
+  if(t.download) a.setAttribute("download","");
   a.innerHTML=`<span>${esc(t.title)}</span>`+(t.beta?`<span class="beta">Beta</span>`:"");
   grid.appendChild(a);
 });
