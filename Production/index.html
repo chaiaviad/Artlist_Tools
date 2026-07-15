@@ -68,10 +68,7 @@ const TOOLS = [
   { folder:"Digital_Shader/",            title:"Digital Shader",  production:true, beta:true },
   { folder:"../Collab_Maker/",           title:"Collab Maker" },
   { folder:"../Thumbnail_Banner_Maker/", title:"Thumbnail & Banner Maker" },
-  { title:"Companion", beta:true, split:[
-      { label:"Windows", file:"https://github.com/chaiaviad/Artlist_Tools/releases/download/companion-v1.0/Companion.exe" },
-      { label:"Mac", file:"https://github.com/chaiaviad/Artlist_Tools/releases/download/companion-v1.0/Companion_Mac_Installer.tar.gz" }
-  ]},
+  { file:"https://github.com/chaiaviad/Artlist_Tools/releases/download/companion-v1.0/Companion.exe", title:"Companion", download:true, pc:true, beta:true },
 ];
 const grid=document.getElementById("grid");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
