@@ -28,6 +28,8 @@
   .card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .beta{font-size:11px;font-weight:800;letter-spacing:.5px;color:#111;background:var(--accent);
      border-radius:999px;padding:3px 9px;text-transform:uppercase}
+  .pc{font-size:11px;font-weight:800;letter-spacing:.5px;color:#fff;background:#444;
+     border-radius:999px;padding:3px 9px;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -44,7 +46,7 @@
 const TOOLS = [
   { al:"AL-04", folder:"Thumbnail_Banner_Maker", title:"Thumbnail & Banner Maker" },
   { al:"AL-05", folder:"Collab_Maker",            title:"Collab Maker" },
-  { al:"AL-08", file:"Companion/Companion.exe",   title:"Companion", download:true },
+  { al:"AL-08", file:"Companion/Companion.exe",   title:"Companion", download:true, pc:true },
 ];
 const grid=document.getElementById("grid");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -52,7 +54,7 @@ TOOLS.slice().sort((a,b)=>a.al.localeCompare(b.al)).forEach(t=>{
   const a=document.createElement("a");
   a.className="card"; a.href=t.download?t.file:t.folder+"/";
   if(t.download) a.setAttribute("download","");
-  a.innerHTML=`<span>${esc(t.title)}</span>`+(t.beta?`<span class="beta">Beta</span>`:"");
+  a.innerHTML=`<span>${esc(t.title)}</span>`+(t.beta?`<span class="beta">Beta</span>`:"")+( t.pc?`<span class="pc">PC Only</span>`:"");
   grid.appendChild(a);
 });
 </script>
