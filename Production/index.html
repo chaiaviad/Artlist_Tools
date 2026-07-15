@@ -81,7 +81,7 @@ TOOLS.slice().sort((a,b)=>(b.production?1:0)-(a.production?1:0)).forEach(t=>{
     const div=document.createElement("div");
     div.className="card-split";
     div.innerHTML=`<div class="title"><span>${esc(t.title)}</span>${t.beta?`<span class="beta">Beta</span>`:""}</div>`
-      +`<div class="btns">${t.split.map(s=>`<a class="btn" href="${esc(s.file)}" download>${esc(s.label)}</a>`).join("")}</div>`;
+      +`<div class="btns">${t.split.map(s=>`<a class="btn" href="${esc(s.file)}">${esc(s.label)}</a>`).join("")}</div>`;
     grid.appendChild(div);
     return;
   }
