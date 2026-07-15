@@ -46,7 +46,8 @@
 const TOOLS = [
   { al:"AL-04", folder:"Thumbnail_Banner_Maker", title:"Thumbnail & Banner Maker" },
   { al:"AL-05", folder:"Collab_Maker",            title:"Collab Maker" },
-  { al:"AL-08", file:"Companion/Companion.exe",   title:"Companion", download:true, pc:true },
+  { al:"AL-08", file:"Companion/WIN/Companion.exe", title:"Companion", subtitle:"Windows", download:true },
+  { al:"AL-08", file:"Companion/MAC/INSTALL_MAC.command", title:"Companion", subtitle:"Mac", download:true },
 ];
 const grid=document.getElementById("grid");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -54,7 +55,7 @@ TOOLS.slice().sort((a,b)=>a.al.localeCompare(b.al)).forEach(t=>{
   const a=document.createElement("a");
   a.className="card"; a.href=t.download?t.file:t.folder+"/";
   if(t.download) a.setAttribute("download","");
-  a.innerHTML=`<span>${esc(t.title)}</span>`+(t.beta?`<span class="beta">Beta</span>`:"")+( t.pc?`<span class="pc">PC Only</span>`:"");
+  a.innerHTML=`<span>${esc(t.title)}</span>`+(t.subtitle?`<span class="pc">${esc(t.subtitle)}</span>`:"")+(t.beta?`<span class="beta">Beta</span>`:"")+( t.pc?`<span class="pc">PC Only</span>`:"");
   grid.appendChild(a);
 });
 </script>
