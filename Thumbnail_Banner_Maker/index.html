@@ -6,10 +6,10 @@
 <title>Artlist Thumbnail Maker</title>
 <style>
 :root {
-  --y:#FADA2A; --bg:#000; --card:#171717;
-  --b:rgba(255,255,255,0.10); --b-hi:rgba(255,255,255,0.22);
-  --t1:#fff; --t2:rgba(255,255,255,0.60); --t3:rgba(255,255,255,0.40); --t4:rgba(255,255,255,0.25);
-  --r:8.4px; --r-pill:40px;
+  --y:#f8da1f; --bg:#0e0e10; --card:#17171b;
+  --b:#2c2c34; --b-hi:#3a3a44;
+  --t1:#f2f2f4; --t2:#9a9aa6; --t3:#75757e; --t4:#55555c;
+  --r:9px; --r-pill:9px;
   --f-sec:23.2px; --f-label:13.8px; --f-small:10.1px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -19,16 +19,13 @@ body{
   background:var(--bg);color:var(--t1);
   min-height:100%;overflow-x:hidden;overflow-y:auto;
 }
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 52% 58% at 70% 44%,rgba(50,55,105,.62) 0%,transparent 62%),
-    radial-gradient(ellipse 34% 38% at 26% 64%,rgba(255,218,42,.055) 0%,transparent 58%);
-}
+body::before{content:none}
 
 /* ── HEADER ── */
-.hdr{position:relative;z-index:1;text-align:center;padding:20px 16px 12px}
-.hdr-title{font-family:'ArtlistSans',sans-serif;font-size:clamp(37px,7vw,147px);font-weight:400;letter-spacing:-0.04em;color:var(--t1);line-height:0.9}
+.hdr{position:relative;z-index:1;display:flex;align-items:center;gap:12px;text-align:left;
+   padding:10px 16px;background:var(--card);border-bottom:1px solid var(--b)}
+.hdr-title{font-family:'ArtlistSans',sans-serif;font-size:18px;font-weight:600;
+   letter-spacing:0;color:var(--y);line-height:1}
 
 /* ── DESKTOP LAYOUT ── */
 .main{
@@ -82,7 +79,7 @@ body::before{
 }
 
 /* ── SECTION TITLE ── */
-.sec-title{font-family:'ArtlistSans',sans-serif;font-size:calc(var(--f-sec) * 1.15);font-weight:400;letter-spacing:-0.8px;color:var(--t1);padding-bottom:7px;border-bottom:1px solid var(--y);margin-bottom:8px}
+.sec-title{font-family:'ArtlistSans',sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--t3);padding-bottom:0;border-bottom:none;margin-bottom:8px}
 
 /* ── CANVAS ── */
 .canvas-wrap{width:100%;max-width:506px;display:flex;flex-direction:column;gap:12px}
@@ -108,9 +105,9 @@ body::before{
 
 /* ── PILLS (bigger) ── */
 .pills{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
-.pill{font-family:'ArtlistSans',sans-serif;font-size:12.65px;font-weight:500;padding:9.2px 20.7px;border-radius:var(--r-pill);border:0.5px solid rgba(209,209,218,0.8);color:var(--t1);cursor:pointer;background:linear-gradient(90deg,rgba(0,0,0,.15),rgba(0,0,0,.15));transition:all .15s;white-space:nowrap;box-shadow:inset 3.77px -5.02px 8.03px -6.73px rgba(255,255,255,.1)}
-.pill:hover{border-color:rgba(255,255,255,.4)}
-.pill.export{background:var(--y);color:#111;border-color:var(--y);font-weight:700}
+.pill{font-family:'ArtlistSans',sans-serif;font-size:13px;font-weight:600;padding:8px 13px;border-radius:var(--r-pill);border:1px solid var(--b);color:var(--t1);cursor:pointer;background:#1f1f25;transition:all .15s;white-space:nowrap;box-shadow:none}
+.pill:hover{border-color:var(--b-hi)}
+.pill.export{background:var(--y);color:#111;border-color:#c9b900;font-weight:700}
 .pill.export:hover{opacity:.9}
 .pill.active{border-color:var(--y);color:var(--y)}
 
